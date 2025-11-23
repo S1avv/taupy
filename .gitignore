@@ -1,0 +1,55 @@
+# ---- Python ----
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.pdb
+*.egg
+*.egg-info/
+.Python
+env/
+venv/
+.venv/
+build/
+.pytest_cache/
+
+# Installer logs
+pip-log.txt
+pip-delete-this-directory.txt
+
+# ---- Rust ----
+/target/
+Cargo.lock
+
+# ---- JavaScript / Node ----
+node_modules/
+/dist/
+/build/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# ---- IDE / Editor configs ----
+.vscode/
+.idea/
+*.sw?
+
+# ---- OS files ----
+.DS_Store
+Thumbs.db
+
+# ---- Executables and binaries ----
+*.exe
+*.dll
+*.so
+*.dylib
+*.wasm
+
+!TauPy/utils/*.dll
+!TauPy/utils/*.exe
+
+# ---- Misc ----
+.env
+
+
