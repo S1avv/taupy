@@ -23,6 +23,10 @@ socket.onmessage = (event) => {
         document.documentElement.setAttribute("data-theme", msg.theme);
         localStorage.setItem("theme", msg.theme);
     }
+
+    if (msg.type === "hot_reload") {
+        location.reload();
+    }
 };
 
 document.addEventListener("click", evt => {

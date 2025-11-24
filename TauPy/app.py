@@ -89,7 +89,7 @@ class App:
 
         if self.dev:
             DevUI.banner(self.title, 8000)
-            asyncio.create_task(start_hot_reload(self))
+            self._reload_task = asyncio.create_task(start_hot_reload(self))
 
         loop = asyncio.get_running_loop()
 
@@ -99,7 +99,7 @@ class App:
         try:
             loop.add_signal_handler(signal.SIGINT, sigint_handler)
         except:
-            signal.signal(signal.SIGINT, lambda *_: asyncio.create_task(self.shutdown()))
+            signal.signal(signal.SIGINT, lambda *_: asyncio.run_coroutine_threadsafe(self.shutdown(), loop))
 
         await asyncio.Future()
 
