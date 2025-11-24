@@ -14,6 +14,9 @@ websockets = "^12.0"
 packaging = "^25.0"
 click = "^8.3.0"
 pytest = "9.0.0"
+nuitka = "^2.8.6"
+requests = "^2.32.5"
+watchfiles = "^1.1.1"
 
 [tool.poetry.scripts]
 taupy = "TauPy.cli.main:main"

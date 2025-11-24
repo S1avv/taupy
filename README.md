@@ -77,7 +77,7 @@ app.run(VStack(id="main"))
 
 Run it:
 ```bash
-taupy run
+taupy dev
 ```
 
 Instant window. Instant reactivity. Zero delays.
@@ -93,15 +93,8 @@ Create project
 taupy new myapp
 ```
 
-Run it
-
 ```bash
 cd myapp
-taupy run
-```
-
-Development mode
-```bash
 taupy dev
 ```
 
@@ -155,11 +148,11 @@ Themes apply instantly.
 - 🟩 **CLI**
 - 🟩 **Rust WebView2 launcher**
 - 🟩 **Theme switching** (DaisyUI)
+- 🟩 **Hot Reload**
 
 ---
 
 ## 🚧 In Progress
-- 🟨 **Hot Reload**
 - 🟨 **Native dialogs** (Open File / Save File / Message Box)
 - 🟨 **Window API** (resize, fullscreen, minimize, position)
 - 🟨 **Background tasks**

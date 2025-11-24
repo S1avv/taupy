@@ -1,13 +1,17 @@
 from __future__ import annotations
 
+import signal
 import asyncio
 import os
+import pathlib
+import sys
 import subprocess
 from typing import Any, Awaitable, Callable, Optional
 
 import websockets
 
 from .dispatcher import Dispatcher
+from .devui import DevUI
 from .router import Router
 from .widgets.component import Component
 from .widgets.elements import Button_, Text_, Input_
@@ -15,6 +19,7 @@ from .events.events import Resize
 from .state import State
 from .server import TauServer
 
+from .reloader import start_hot_reload
 
 class App:
     """
@@ -29,7 +34,7 @@ class App:
       • Handling connect events and UI theme updates
     """
 
-    def __init__(self, title: str, width: int, height: int, theme: str = "light") -> None:
+    def __init__(self, title: str, width: int, height: int, theme: str = "light", dev: bool = False) -> None:
         """
         Initialize the application.
 
@@ -39,6 +44,9 @@ class App:
             height (int): Window height in pixels.
             theme (str): DaisyUI theme name.
         """
+        self.root_module_name = sys.argv[0].replace(".py", "").replace("/", ".").replace("\\", ".")
+        self.root_module_path = sys.argv[0]
+
         self.theme = theme
         self.title = title
         self.width = width
@@ -50,6 +58,13 @@ class App:
 
         self.server = TauServer(self)
         self.connect_handlers: list[Callable[[], Awaitable[None] | None]] = []
+
+        self.dev = True if "--dev" in sys.argv else False
+        self.no_window = "--no-window" in sys.argv
+
+        self._shutting_down = False
+        self.window_process = None
+        self._reload_task = None
 
     async def run(self, root_component: Component, port: int = 8765) -> None:
         """
@@ -66,9 +81,25 @@ class App:
         """
         self.root_component = root_component
         self._render_and_save_html(root_component)
-
+        
         await websockets.serve(self.server.handler, "localhost", port)
-        self._launch_window_process()
+        
+        if not self.no_window:
+            self._launch_window_process()
+
+        if self.dev:
+            DevUI.banner(self.title, 8000)
+            asyncio.create_task(start_hot_reload(self))
+
+        loop = asyncio.get_running_loop()
+
+        def sigint_handler(*_):
+            asyncio.create_task(self.shutdown())
+
+        try:
+            loop.add_signal_handler(signal.SIGINT, sigint_handler)
+        except:
+            signal.signal(signal.SIGINT, lambda *_: asyncio.create_task(self.shutdown()))
 
         await asyncio.Future()
 
@@ -256,3 +287,46 @@ class App:
             return handler
 
         return decorator
+
+    async def hot_reload_broadcast(self, message: str) -> None:
+        """
+        Broadcast a message to all connected clients.
+
+        Parameters:
+            message (str): Message string.
+        """
+        if self.dev:
+            await self.server.broadcast({"type": "hot_reload", "message": message})
+
+    async def shutdown(self):
+        if self._shutting_down:
+            return
+        self._shutting_down = True
+
+        print("\n[HMR] Shutting down...")
+
+        if self._reload_task:
+            self._reload_task.cancel()
+            try:
+                await self._reload_task
+            except:
+                pass
+
+        try:
+            await self.server.stop()
+        except:
+            pass
+
+        if self.window_process:
+            try:
+                self.window_process.terminate()
+            except:
+                pass
+
+            try:
+                self.window_process.wait(timeout=2)
+            except:
+                self.window_process.kill()
+
+        print("[HMR] Stopped.")
+        os._exit(0)
