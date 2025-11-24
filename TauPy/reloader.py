@@ -10,9 +10,9 @@ class TauFilter(DefaultFilter):
     def __call__(self, change, path: str) -> bool:
         p = path.replace("\\", "/")
 
-        if "/launcher/" in p or p.startswith("launcher/"):
+        if p.startswith("dist/") or "/dist/" in p:
             return False
-        if "/dist/" in p or p.startswith("dist/"):
+        if p.startswith("launcher/") or "/launcher/" in p:
             return False
 
         return super().__call__(change, path)
@@ -22,13 +22,19 @@ _last_reload = 0
 
 
 async def start_hot_reload(app) -> None:
+    """
+    Watches for file changes, sends hot-reload events and restarts process.
+
+    Works automatically. No dev-runner required.
+    """
     global _last_reload
 
-    await asyncio.sleep(0.5)
+    await asyncio.sleep(0.4)
 
     async for changes in awatch(".", watch_filter=TauFilter()):
         now = time.time()
-        if now - _last_reload < 0.3:
+
+        if now - _last_reload < 0.4:
             continue
 
         _last_reload = now
@@ -42,24 +48,35 @@ async def start_hot_reload(app) -> None:
 
         except Exception as e:
             err = "".join(traceback.format_exception(e))
-            print("[HMR] Syntax error detected:\n", err)
+            print("[HMR] Syntax error:\n", err)
 
             await app.server.broadcast({
                 "type": "hmr_error",
                 "message": err
             })
-
             continue
 
-        print("[HMR] Restarting server...")
+        print("[HMR] Broadcasting reload event...")
+
+        await app.hot_reload_broadcast("hot_reload")
+
+        try:
+            await app.server.stop()
+        except:
+            pass
+
+        if app.window_process:
+            try:
+                app.window_process.terminate()
+            except:
+                pass
+
+        print("[HMR] Restarting process...")
 
         args = sys.argv[:]
-
         if "--dev" not in args:
             args.append("--dev")
         if "--no-window" not in args:
             args.append("--no-window")
-
-        await asyncio.sleep(0.2)
 
         os.execv(sys.executable, [sys.executable] + args)

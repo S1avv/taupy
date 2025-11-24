@@ -74,7 +74,7 @@ def new(name):
     click.echo()
     click.secho("Next steps:", fg="cyan")
     click.secho(f"  cd {name}", fg="yellow")
-    click.secho("  taupy run", fg="yellow")
+    click.secho("  taupy dev", fg="yellow")
 
     click.echo()
     click.secho("Happy coding with TauPy! ✨", fg="magenta")
