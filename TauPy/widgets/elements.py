@@ -1,196 +1,185 @@
 from __future__ import annotations
-from typing import Any, Callable, Iterable, List, Optional
+from typing import Any, Callable, List, Optional
 from .component import Component
 import shutil
 import os
+import asyncio
+
+def _normalize_props(props: dict[str, Any]) -> dict[str, Any]:
+    """Convert class_ → class and drop Nones."""
+    out = {}
+    for k, v in props.items():
+        if v is None:
+            continue
+        if k == "class_":
+            out["class"] = v
+        else:
+            out[k] = v
+    return out
 
 
 def _props_to_str(props: dict[str, Any]) -> str:
-    return " ".join(f'{k}="{v}"' for k, v in props.items())
+    out = []
+    for k, v in props.items():
+        if v is None:
+            continue
 
+        if k.startswith("data_"):
+            k = "data-" + k[5:]
 
-class Div_(Component):
-    """A generic HTML <div> container."""
+        out.append(f'{k}="{v}"')
 
-    def render(self) -> str:
-        children_html = super().render()
-        return (
-            f'<div id="{self.id}" {_props_to_str(self.props)} '
-            f'data-component-id="{self.id}">{children_html}</div>'
-        )
+    return " ".join(out)
 
-
-class Button_(Component):
+class Modal_(Component):
     """
-    A clickable button component.
-
-    Parameters:
-        text (str): Display text on the button.
-        id (str, optional): Unique identifier.
-        on_click (Callable, optional): Event handler for click.
-        children (list[Component], optional): Not used by Button but kept for consistency.
-        **props: Additional HTML attributes.
+    DaisyUI modal. Controlled via State[bool].
     """
 
     def __init__(
         self,
-        text: str,
+        open_state,
+        *,
         id: Optional[str] = None,
-        on_click: Optional[Callable] = None,
-        children: Optional[List[Component]] = None,
-        **props: Any
-    ) -> None:
-        super().__init__(id=id, children=children, **props)
-        self.text = text
-        self.on_click = on_click
+        title: Optional[str] = None,
+        content: Optional[List[Component]] = None,
+        actions: Optional[List[Component]] = None,
+        **props
+    ):
+        super().__init__(id=id, **props)
+
+        self.state = open_state
+        self.title = title
+        self.content = content or []
+        self.actions = actions or []
+
+        def on_state_change(_):
+            asyncio.create_task(self.update())
+
+        self.state.subscribe(on_state_change)
 
     def render(self) -> str:
+        is_open = bool(self.state())
+
+        checked_attr = "checked" if is_open else ""
+        props_str = _props_to_str(self.props)
+
+        content_html = "".join(c.render() for c in self.content)
+        actions_html = "".join(c.render() for c in self.actions)
+
+        title_html = (
+            f'<h3 class="text-lg font-bold">{self.title}</h3>'
+            if self.title else ""
+        )
+
+        return f"""
+<input type="checkbox" id="{self.id}" class="modal-toggle" {checked_attr} />
+
+<div class="modal">
+  <div class="modal-box" {props_str}>
+    {title_html}
+    <div class="py-4">
+      {content_html}
+    </div>
+    <div class="modal-action">
+      {actions_html}
+      <label for="{self.id}" class="btn">Close</label>
+    </div>
+  </div>
+</div>
+"""
+
+class Div_(Component):
+    def render(self) -> str:
+        props_str = _props_to_str(self.props)
+        children = super().render()
+        return f'<div id="{self.id}" {props_str} data-component-id="{self.id}">{children}</div>'
+
+
+class Button_(Component):
+    def __init__(self, text: str, **props):
+        super().__init__(**props)
+        self.text = text
+        
+
+    def render(self) -> str:
+        props_str = _props_to_str(self.props)
         return (
-            f'<button class="btn" id="{self.id}" '
+            f'<button id="{self.id}" class="btn" {props_str} '
             f'data-component-id="{self.id}">{self.text}</button>'
         )
 
 
 class Input_(Component):
-    """
-    A text input field.
-
-    Parameters:
-        value (str | Callable): Initial or reactive value.
-        placeholder (str): Placeholder text.
-        id (str, optional): Unique ID.
-        on_input (Callable, optional): Input handler.
-        **props: HTML attributes.
-    """
-
-    def __init__(
-        self,
-        value: str | Callable[[], str] = "",
-        placeholder: str = "",
-        id: Optional[str] = None,
-        on_input: Optional[Callable] = None,
-        **props: Any
-    ) -> None:
-        super().__init__(id=id, **props)
+    def __init__(self, value="", placeholder="", on_input=None, **props):
+        super().__init__(**props)
         self.value = value
         self.placeholder = placeholder
         self.on_input = on_input
 
     def render(self) -> str:
-        value_str = self.value() if callable(self.value) else self.value
+        v = self.value() if callable(self.value) else self.value
         props_str = _props_to_str(self.props)
 
         return (
-            f'<input class="input" id="{self.id}" value="{value_str}" '
-            f'placeholder="{self.placeholder}" {props_str} '
-            f'data-component-id="{self.id}" />'
+            f'<input id="{self.id}" value="{v}" placeholder="{self.placeholder}" '
+            f'class="input" {props_str} data-component-id="{self.id}" />'
         )
 
 
 class Text_(Component):
-    """
-    Text component. Supports static and reactive content.
-
-    Parameters:
-        value (str | Callable): Text or reactive function.
-        **kwargs: Additional props.
-    """
-
-    def __init__(
-        self,
-        value: str | Callable[[], str],
-        **kwargs: Any
-    ) -> None:
-        super().__init__(**kwargs)
+    def __init__(self, value, **props):
+        super().__init__(**props)
         self.value = value
 
     def render(self) -> str:
-        display_value = self.value() if callable(self.value) else self.value
+        text = self.value() if callable(self.value) else self.value
+        props_str = _props_to_str(self.props)
+
         return (
-            f'<span class="text" type="text" id="{self.id}" '
-            f'{_props_to_str(self.props)} data-component-id="{self.id}">'
-            f'{display_value}</span>'
+            f'<span id="{self.id}" {props_str} data-component-id="{self.id}">{text}</span>'
         )
 
 
 class Table_(Component):
-    """
-    A table component.
-
-    Parameters:
-        head (list[str], optional): Table header labels.
-        rows (list[list[str]], optional): Table body rows.
-        id (str, optional): Unique ID.
-        **props: Additional HTML attributes.
-    """
-
-    def __init__(
-        self,
-        head: Optional[list[str]] = None,
-        rows: Optional[list[list[Any]]] = None,
-        id: Optional[str] = None,
-        **props: Any
-    ) -> None:
-        super().__init__(id=id, **props)
+    def __init__(self, head=None, rows=None, **props):
+        super().__init__(**props)
         self.head = head or []
         self.rows = rows or []
 
     def render(self) -> str:
-        props = _props_to_str(self.props)
+        props_str = _props_to_str(self.props)
 
-        thead_html = ""
+        thead = ""
         if self.head:
-            ths = "".join(f"<th>{col}</th>" for col in self.head)
-            thead_html = f"<thead><tr><th></th>{ths}</tr></thead>"
+            ths = "".join(f"<th>{c}</th>" for c in self.head)
+            thead = f"<thead><tr><th></th>{ths}</tr></thead>"
 
-        tbody_rows = []
-        for index, row in enumerate(self.rows, start=1):
-            cells = "".join(f"<td>{cell}</td>" for cell in row)
-            tbody_rows.append(f"<tr><th>{index}</th>{cells}</tr>")
-        tbody_html = "<tbody>" + "".join(tbody_rows) + "</tbody>"
+        rows_html = []
+        for i, row in enumerate(self.rows, start=1):
+            tds = "".join(f"<td>{c}</td>" for c in row)
+            rows_html.append(f"<tr><th>{i}</th>{tds}</tr>")
+        tbody = "<tbody>" + "".join(rows_html) + "</tbody>"
 
         return (
             f'<div class="overflow-x-auto">'
-            f'  <table class="table" id="{self.id}" {props} '
-            f'data-component-id="{self.id}">'
-            f'    {thead_html}'
-            f'    {tbody_html}'
+            f'  <table id="{self.id}" {props_str} class="table" data-component-id="{self.id}">'
+            f'    {thead}'
+            f'    {tbody}'
             f'  </table>'
             f'</div>'
         )
 
 
 class Image_(Component):
-    """
-    An image component.
-
-    Automatically copies local files into `dist/public/`.
-
-    Parameters:
-        src (str): Path or URL.
-        alt (str): Alternative text.
-        id (str, optional): Unique ID.
-        width (int | str, optional): Image width.
-        height (int | str, optional): Image height.
-        **props: Additional HTML attributes.
-    """
-
-    def __init__(
-        self,
-        src: str,
-        alt: str = "",
-        id: Optional[str] = None,
-        width: Optional[int | str] = None,
-        height: Optional[int | str] = None,
-        **props: Any
-    ) -> None:
-        super().__init__(id=id, **props)
+    def __init__(self, src, alt="", width=None, height=None, **props):
+        super().__init__(**props)
 
         if os.path.isfile(src):
             os.makedirs("dist/public", exist_ok=True)
-            filename = os.path.basename(src)
-            shutil.copy(src, os.path.join("dist/public", filename))
-            self.src = f"dist/public/{filename}"
+            name = os.path.basename(src)
+            shutil.copy(src, f"dist/public/{name}")
+            self.src = f"dist/public/{name}"
         else:
             self.src = src
 
@@ -199,44 +188,39 @@ class Image_(Component):
         self.height = height
 
     def render(self) -> str:
+        props_str = _props_to_str(self.props)
+
         attrs = [
             f'src="{self.src}"',
             f'alt="{self.alt}"'
         ]
+        if self.width: attrs.append(f'width="{self.width}"')
+        if self.height: attrs.append(f'height="{self.height}"')
 
-        if self.width:
-            attrs.append(f'width="{self.width}"')
-        if self.height:
-            attrs.append(f'height="{self.height}"')
+        attrs = " ".join(attrs)
 
-        for k, v in self.props.items():
-            attrs.append(f'{k}="{v}"')
-
-        if self.id:
-            attrs.append(f'id="{self.id}"')
-            attrs.append(f'data-component-id="{self.id}"')
-
-        return f"<img {' '.join(attrs)} />"
-
-def Div(*children: Component, **kwargs: Any) -> Div_:
-    return Div_(children=list(children), **kwargs)
+        return (
+            f'<img id="{self.id}" {attrs} {props_str} data-component-id="{self.id}" />'
+        )
 
 
-def Button(text: str, **kwargs: Any) -> Button_:
-    return Button_(text, **kwargs)
+def Div(*children, style: str | None = None, **props):
+    return Div_(children=list(children), style=style, **props)
 
+def Button(text: str, style: str | None = None, **props):
+    return Button_(text, style=style, **props)
 
-def Text(value: str | Callable[[], str], **kwargs: Any) -> Text_:
-    return Text_(value, **kwargs)
+def Text(value, style: str | None = None, **props):
+    return Text_(value, style=style, **props)
 
+def Input(value="", placeholder="", style: str | None = None, **props):
+    return Input_(value, placeholder=placeholder, style=style, **props)
 
-def Input(value: str | Callable[[], str] = "", placeholder: str = "", **kwargs: Any) -> Input_:
-    return Input_(value, placeholder=placeholder, **kwargs)
+def Table(head=None, rows=None, style: str | None = None, **props):
+    return Table_(head=head, rows=rows, style=style, **props)
 
+def Image(src, style: str | None = None, **props):
+    return Image_(src, style=style, **props)
 
-def Table(head: Optional[list[str]] = None, rows: Optional[list[list[Any]]] = None, **kwargs: Any) -> Table_:
-    return Table_(head=head, rows=rows, **kwargs)
-
-
-def Image(src: str, **props: Any) -> Image_:
-    return Image_(src, **props)
+def Modal(open_state, style: str | None = None, **props):
+    return Modal_(open_state=open_state, style=style, **props)

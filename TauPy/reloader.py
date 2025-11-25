@@ -1,8 +1,11 @@
 import time
 import asyncio
+import importlib
+import traceback
+import platform
 import os
 import sys
-import traceback
+import subprocess
 from watchfiles import awatch, DefaultFilter
 
 
@@ -20,20 +23,45 @@ class TauFilter(DefaultFilter):
 
 _last_reload = 0
 
+def clear_console():
+    if platform.system() == "Windows":
+        os.system("cls")
+    else:
+        os.system("clear")
+
+def free_port(port: int):
+    try:
+        if sys.platform.startswith("win"):
+            result = subprocess.check_output(
+                f'netstat -ano | findstr :{port}',
+                shell=True, encoding="utf-8", errors="ignore"
+            )
+
+            for line in result.splitlines():
+                parts = line.split()
+                pid = parts[-1]
+                if pid.isdigit():
+                    print(f"[HMR] Killing process on port {port}, PID={pid}")
+                    subprocess.call(f"taskkill /PID {pid} /F", shell=True)
+
+        else:
+            subprocess.call(f"fuser -k {port}/tcp", shell=True)
+
+    except Exception as e:
+        print("[HMR] Could not free port:", e)
 
 async def start_hot_reload(app) -> None:
     """
-    Watches for file changes, sends hot-reload events and restarts process.
-
-    Works automatically. No dev-runner required.
+    Watches for file changes and restarts the Python module
     """
     global _last_reload
+
+    print("[HMR] Enabled (soft reload mode)")
 
     await asyncio.sleep(0.4)
 
     async for changes in awatch(".", watch_filter=TauFilter()):
         now = time.time()
-
         if now - _last_reload < 0.4:
             continue
 
@@ -45,18 +73,14 @@ async def start_hot_reload(app) -> None:
         try:
             import py_compile
             py_compile.compile(app.root_module_path, doraise=True)
-
         except Exception as e:
             err = "".join(traceback.format_exception(e))
             print("[HMR] Syntax error:\n", err)
-
             await app.server.broadcast({
                 "type": "hmr_error",
                 "message": err
             })
             continue
-
-        print("[HMR] Broadcasting reload event...")
 
         await app.hot_reload_broadcast("hot_reload")
 
@@ -71,12 +95,12 @@ async def start_hot_reload(app) -> None:
             except:
                 pass
 
-        print("[HMR] Restarting process...")
+        print("[HMR] Soft restarting...")
 
-        args = sys.argv[:]
-        if "--dev" not in args:
-            args.append("--dev")
-        if "--no-window" not in args:
-            args.append("--no-window")
+        module = importlib.import_module(app.root_module_name)
+        importlib.reload(module)
 
-        os.execv(sys.executable, [sys.executable] + args)
+        if hasattr(module, "main"):
+            asyncio.create_task(module.main())
+        else:
+            print(f"[HMR] ERROR: main() not found in {app.root_module_name}")

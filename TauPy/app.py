@@ -19,7 +19,7 @@ from .events.events import Resize
 from .state import State
 from .server import TauServer
 
-from .reloader import start_hot_reload
+from .reloader import start_hot_reload, free_port, clear_console
 
 class App:
     """
@@ -81,14 +81,13 @@ class App:
         """
         self.root_component = root_component
         self._render_and_save_html(root_component)
-        
+
         await websockets.serve(self.server.handler, "localhost", port)
         
         if not self.no_window:
             self._launch_window_process()
 
         if self.dev:
-            DevUI.banner(self.title, 8000)
             self._reload_task = asyncio.create_task(start_hot_reload(self))
 
         loop = asyncio.get_running_loop()
@@ -137,11 +136,12 @@ class App:
 
     def _bind_events_and_states(self, component: Component) -> None:
         """
-        Recursively attach event handlers and state subscriptions
-        to all components in the UI tree.
+        Recursively propagate the App reference, connect reactive State bindings,
+        and attach input handlers.
         """
 
         from inspect import isfunction
+        component.app = self
 
         if isinstance(component, Text_) and isfunction(component.value):
             func = component.value
@@ -161,14 +161,12 @@ class App:
 
             for st in states:
                 st.subscribe(
-                    lambda _v, cid=component.id, f=func: self._update_text_component(
-                        cid, f()
-                    )
+                    lambda _v, cid=component.id, f=func:
+                        self._update_text_component(cid, f())
                 )
 
         if isinstance(component, Button_):
-            if component.on_click:
-                self.dispatcher.on_click(component.id)(component.on_click)
+            pass
 
         if isinstance(component, Input_):
             if component.on_input:
@@ -176,7 +174,6 @@ class App:
 
         for child in component.children:
             self._bind_events_and_states(child)
-
     def _update_text_component(self, component_id: str, new_value: Any) -> None:
         """
         Send a WebSocket message updating a reactive <Text> component.
@@ -303,8 +300,6 @@ class App:
             return
         self._shutting_down = True
 
-        print("\n[HMR] Shutting down...")
-
         if self._reload_task:
             self._reload_task.cancel()
             try:
@@ -323,10 +318,19 @@ class App:
             except:
                 pass
 
+            free_port(8765)
+
             try:
                 self.window_process.wait(timeout=2)
             except:
                 self.window_process.kill()
 
-        print("[HMR] Stopped.")
+        print("Stopped.")
         os._exit(0)
+
+    async def update_component(self, component_id: str, new_html: str):
+        await self.server.broadcast({
+            "type": "update_html",
+            "id": component_id,
+            "html": new_html
+        })

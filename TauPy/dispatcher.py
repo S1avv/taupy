@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 from typing import Any, Awaitable, Callable, Dict, Optional
 from .events.events import Click, Input
 
@@ -67,10 +68,6 @@ class Dispatcher:
 
         return decorator
 
-    # -------------------------------------------------------------------------
-    # Dispatching
-    # -------------------------------------------------------------------------
-
     async def dispatch(self, event: Any) -> Optional[Any]:
         """
         Dispatch an event object to the appropriate handler based on its type.
@@ -91,19 +88,28 @@ class Dispatcher:
 
     async def dispatch_click(self, component_id: str) -> Optional[Any]:
         """
-        Dispatch a click event for a given widget ID.
+        Dispatch a click event for the given component ID.
 
         Parameters:
-            component_id (str): The clicked widget's ID.
+            component_id (str): The clicked widget ID.
 
         Returns:
-            Optional[Any]: Handler result if the handler exists.
+            Optional[Any]: Result of the handler if it exists.
         """
         handler = self.handlers["click"].get(component_id)
-        if handler:
-            event = Click(component_id)
-            return await handler(event)
-        return None
+        if handler is None:
+            return None
+
+        event = Click(component_id)
+
+        try:
+            result = handler(event)
+            if asyncio.iscoroutine(result):
+                return await result
+            return result
+        except Exception as e:
+            print(e)
+            return None
 
     async def dispatch_input(self, component_id: str, value: str) -> Optional[Any]:
         """

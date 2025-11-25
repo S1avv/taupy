@@ -7,6 +7,7 @@ if TYPE_CHECKING:
     from websockets.server import WebSocketServerProtocol
     from TauPy.app import App
 
+from .devui import DevUI
 
 class TauServer:
     """
@@ -51,6 +52,8 @@ class TauServer:
         await self.app._run_connect_handlers()
 
         await self.init_navigation()
+
+        DevUI.banner(self.app.title, 8000, dev=self.app.dev)
 
         try:
             async for message in websocket:
