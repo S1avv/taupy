@@ -27,6 +27,14 @@ socket.onmessage = (event) => {
     if (msg.type === "hot_reload") {
         location.reload();
     }
+
+    if (msg.type === "update_html") {
+        const el = document.getElementById(msg.id);
+        if (el) {
+            el.outerHTML = msg.html;
+        }
+    }
+
 };
 
 document.addEventListener("click", evt => {
