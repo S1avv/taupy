@@ -67,6 +67,21 @@ if (!window._tauInputPatched) {
             const el = document.getElementById(msg.id);
             if (el) el.value = msg.value;
         }
+        if (msg.type === "window_cmd") {
+            if (window.taupyNative && typeof window.taupyNative.send === "function") {
+                window.taupyNative.send(msg.command || msg.payload || {});
+            }
+        }
     });
     window._tauInputPatched = true;
+}
+
+// Forward native window events back to the backend so Python can react.
+if (!window._tauWindowBridgePatched) {
+    if (window.taupyNative && typeof window.taupyNative.onEvent === "function") {
+        window.taupyNative.onEvent((evt) => {
+            socket.send(JSON.stringify({ type: "window_event", name: evt.type, payload: evt }));
+        });
+    }
+    window._tauWindowBridgePatched = true;
 }

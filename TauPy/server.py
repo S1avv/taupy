@@ -53,7 +53,7 @@ class TauServer:
 
         await self.init_navigation()
 
-        DevUI.banner(self.app.title, 8000, dev=self.app.dev)
+        DevUI.banner(self.app.title, self.app.http_port, dev=self.app.dev)
 
         try:
             async for message in websocket:
@@ -66,6 +66,14 @@ class TauServer:
                     await self.app.dispatcher.dispatch_input(
                         data["id"],
                         data.get("value", "")
+                    )
+                elif event_type == "window_cmd":
+                    cmd = data.get("command") or data.get("payload") or {}
+                    await self.app.send_window_command(cmd)
+                elif event_type == "window_event":
+                    await self.app._handle_window_event(
+                        data.get("name"),
+                        data.get("payload", {})
                     )
 
         except Exception:
@@ -102,4 +110,7 @@ class TauServer:
 
         Called automatically on each new WebSocket connection.
         """
+        from TauPy.app import AppMode
+        if getattr(self.app, "mode", AppMode.GENERATE_HTML) != AppMode.GENERATE_HTML:
+            return
         await self.app.navigate("/")

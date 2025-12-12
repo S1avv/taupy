@@ -24,6 +24,18 @@ class TauFilter(DefaultFilter):
 _last_reload = 0
 
 def clear_console():
+    """
+    Clear the console if we are attached to one.
+
+    In GUI builds on Windows there is no attached console; calling `cls`
+    would spawn a transient `cmd.exe` window. We skip clearing in that case.
+    """
+    stdout_attached = hasattr(sys.stdout, "isatty") and sys.stdout.isatty()
+    stderr_attached = hasattr(sys.stderr, "isatty") and sys.stderr.isatty()
+
+    if not (stdout_attached or stderr_attached):
+        return
+
     if platform.system() == "Windows":
         os.system("cls")
     else:
@@ -32,17 +44,28 @@ def clear_console():
 def free_port(port: int):
     try:
         if sys.platform.startswith("win"):
-            result = subprocess.check_output(
-                f'netstat -ano | findstr :{port}',
-                shell=True, encoding="utf-8", errors="ignore"
-            )
+            try:
+                result = subprocess.check_output(
+                    f'netstat -ano | findstr :{port}',
+                    shell=True, encoding="utf-8", errors="ignore"
+                )
+            except subprocess.CalledProcessError as cpe:
+                if cpe.returncode == 1:
+                    return
+                raise
+            self_pid = str(os.getpid())
 
             for line in result.splitlines():
                 parts = line.split()
+                if not parts:
+                    continue
                 pid = parts[-1]
-                if pid.isdigit():
-                    print(f"[HMR] Killing process on port {port}, PID={pid}")
-                    subprocess.call(f"taskkill /PID {pid} /F", shell=True)
+                if not pid.isdigit() or pid == "0":
+                    continue
+                if pid == self_pid:
+                    continue
+                print(f"[HMR] Killing process on port {port}, PID={pid}")
+                subprocess.call(f"taskkill /PID {pid} /F", shell=True)
 
         else:
             subprocess.call(f"fuser -k {port}/tcp", shell=True)
