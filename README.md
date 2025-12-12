@@ -1,5 +1,17 @@
 # TauPy
 
+<p align="center">
+  <img src="https://img.shields.io/badge/status-alpha-orange?style=for-the-badge" />
+  <img src="https://img.shields.io/badge/python-3.11%2B-blue?style=for-the-badge" />
+  <img src="https://img.shields.io/badge/platform-Windows%2064bit-green?style=for-the-badge" />
+  <img src="https://img.shields.io/badge/runtime-WebView2-purple?style=for-the-badge" />
+  <img src="https://img.shields.io/badge/license-MIT-red?style=for-the-badge" />
+  <img src="https://img.shields.io/badge/speed-unbelievably%20fast-9cf?style=for-the-badge" />
+  <img src="https://img.shields.io/badge/framework-built%20for%20future-black?style=for-the-badge" />
+</p>
+
+# TauPy
+
 Build desktop apps with **Python + Rust**, and drop in React/Vite when you want. Fast reloads, native window controls, and a tiny API surface.
 
 ## Why TauPy
