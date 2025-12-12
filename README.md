@@ -24,8 +24,8 @@ Build desktop apps with **Python + Rust**, and drop in React/Vite when you want.
 
 ## Code example (Python UI)
 ```python
-from TauPy import App, VStack, Text, Button, State
-from TauPy.events import Click
+from taupy import App, VStack, Text, Button, State
+from taupy.events import Click
 
 app = App("Hello TauPy", 800, 500)
 msg = State("Hello, TauPy!")
