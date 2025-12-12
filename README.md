@@ -1,4 +1,6 @@
-# TauPy
+<p align="center">
+  <img src="assets/lg.png" alt="TauPy" width="auto" height="240" />
+</p>
 
 <p align="center">
   <img src="https://img.shields.io/badge/status-alpha-orange?style=for-the-badge" />
