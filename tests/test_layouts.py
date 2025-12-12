@@ -1,4 +1,4 @@
-from TauPy.widgets.layout import HStack, VStack, Container
+from taupy.widgets.layout import HStack, VStack, Container
 
 def test_hstack_render():
     layout = HStack()

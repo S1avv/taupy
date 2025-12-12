@@ -3,7 +3,7 @@ import subprocess
 import os
 import time
 import shutil
-from TauPy.reloader import free_port
+from taupy.reloader import free_port
 
 
 @click.command()

@@ -1,10 +1,10 @@
 import click
 
-from TauPy.cli.commands.new import new
-from TauPy.cli.commands.dev import dev
-from TauPy.cli.commands.build import build
+from taupy.cli.commands.new import new
+from taupy.cli.commands.dev import dev
+from taupy.cli.commands.build import build
 
-from TauPy.cli.version import check_for_updates
+from taupy.cli.version import check_for_updates
 
 
 @click.group()

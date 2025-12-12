@@ -1,4 +1,4 @@
-from TauPy.events.events import Click, Input, Resize
+from taupy.events.events import Click, Input, Resize
 
 def test_click_event():
     evt = Click("btn1")

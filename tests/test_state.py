@@ -1,4 +1,4 @@
-from TauPy.state import State
+from taupy.state import State
 
 def test_state_basic():
     s = State(10)

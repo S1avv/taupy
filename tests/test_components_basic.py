@@ -1,4 +1,4 @@
-from TauPy.widgets.elements import Text_, Button_, Input_
+from taupy.widgets.elements import Text_, Button_, Input_
 
 def test_text_static():
     t = Text_("Hello")
