@@ -1,0 +1,18 @@
+{
+  "compilerOptions": {
+    "composite": true,
+    "outDir": "./.tsbuild",
+    "skipLibCheck": true,
+    "target": "ESNext",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "allowImportingTsExtensions": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "declaration": true,
+    "declarationMap": false,
+    "emitDeclarationOnly": true,
+    "types": ["node"]
+  },
+  "include": ["vite.config.ts"]
+}
