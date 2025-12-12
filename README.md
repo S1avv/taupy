@@ -43,6 +43,11 @@ if __name__ == "__main__":
     asyncio.run(app.run(VStack(id="root")))
 ```
 
+## Install
+```bash
+pip install taupy-framework
+```
+
 ## Quick start (React front-end)
 ```bash
 taupy new [app_name]

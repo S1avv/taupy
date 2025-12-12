@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "taupy"
+name = "taupy-framework"
 version = "0.0.2"
 description = "TauPy Framework"
 authors = ["S1avv"]
