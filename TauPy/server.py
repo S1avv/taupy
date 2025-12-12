@@ -5,7 +5,7 @@ from typing import Set, Dict, Any, TYPE_CHECKING
 
 if TYPE_CHECKING:
     from websockets.server import WebSocketServerProtocol
-    from TauPy.app import App
+    from taupy.app import App
 
 from .devui import DevUI
 
@@ -110,7 +110,7 @@ class TauServer:
 
         Called automatically on each new WebSocket connection.
         """
-        from TauPy.app import AppMode
+        from taupy.app import AppMode
         if getattr(self.app, "mode", AppMode.GENERATE_HTML) != AppMode.GENERATE_HTML:
             return
         await self.app.navigate("/")

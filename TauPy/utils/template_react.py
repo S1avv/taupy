@@ -1,5 +1,5 @@
 import asyncio
-from TauPy import App, AppMode
+from taupy import App, AppMode
 
 app = App(
     "New TauPy App",

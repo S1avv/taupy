@@ -126,7 +126,7 @@ def build():
         "--include-module=websockets.legacy",
         "--include-module=websockets.legacy.client",
         "--include-module=websockets.legacy.server",
-        "--include-package=TauPy",
+        "--include-package=taupy",
         f"--jobs={jobs}",
         main_py,
     ]

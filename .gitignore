@@ -47,8 +47,8 @@ Thumbs.db
 *.dylib
 *.wasm
 
-!TauPy/utils/*.dll
-!TauPy/utils/*.exe
+!taupy/utils/*.dll
+!taupy/utils/*.exe
 
 # ---- Misc ----
 .env

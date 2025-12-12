@@ -1,6 +1,6 @@
 import asyncio
-from TauPy import App, AppMode, VStack, Text, Button
-from TauPy.events import Click
+from taupy import App, AppMode, VStack, Text, Button
+from taupy.events import Click
 
 app = App("New TauPy App", 800, 600, mode=AppMode.GENERATE_HTML)
 

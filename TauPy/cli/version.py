@@ -3,7 +3,7 @@ from packaging import version
 
 def check_for_updates():
     try:
-        local = importlib.metadata.version("TauPy")
+        local = importlib.metadata.version("taupy")
 
         r = requests.get(
             "https://api.github.com/repos/S1avv/taupy/releases/latest",
