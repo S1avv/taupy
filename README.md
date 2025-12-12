@@ -3,7 +3,7 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/status-early%20alpha-orange?style=for-the-badge" />
+  <img src="https://img.shields.io/badge/status-alpha-orange?style=for-the-badge" />
   <img src="https://img.shields.io/badge/python-3.11%2B-blue?style=for-the-badge" />
   <img src="https://img.shields.io/badge/platform-Windows%2064bit-green?style=for-the-badge" />
   <img src="https://img.shields.io/badge/runtime-WebView2-purple?style=for-the-badge" />
@@ -12,52 +12,22 @@
   <img src="https://img.shields.io/badge/framework-built%20for%20future-black?style=for-the-badge" />
 </p>
 
----
+# TauPy
 
-## ⚡ What is TauPy?
+Build desktop apps with **Python + Rust**, and drop in React/Vite when you want. Fast reloads, native window controls, and a tiny API surface.
 
-**TauPy** is a modern desktop framework for Python.  
-It allows you to build **native-feeling desktop apps** using:
+## Why TauPy
+- **Hybrid by design** - Python backend + Rust launcher; use Python widgets or a full React front-end.
+- **Hot dev loop** - edit → window refreshes near-instantly, no page reload dance.
+- **Native window API** - minimize/maximize/resize/drag, all routed through Python to the launcher.
+- **Shipping ready** - `taupy build` bundles your front-end, rebuilds the launcher, and Nuitka-packages the backend.
 
-- Python
-- HTML-like widgets (UI)
-- Built-in State system (React-style reactivity)
-- Built-in WebSocket engine
-- Auto-updating UI on state changes
-- Powerful layout system (HStack / VStack / Container)
-- DaisyUI + Tailwind built-in themes
-- Routing system like Flask / FastAPI
-- Zero JavaScript required
-
-Everything renders instantly - TauPy is engineered for **extreme performance** and future scalability.
-
----
-
-## 🚀 Why TauPy?
-
-- **Insanely fast UI updates**  
-  State changes propagate instantly to the UI via a WebSocket engine.
-
-- **Minimalistic API**  
-  Build complex apps with very little code.
-
-- **Cross-component reactivity**  
-  Like React, but 100% Python.
-
-- **Desktop window launcher**  
-  Powered by compiled Rust WebView2 runtime.
-
----
-
-## ✨ Quick Start Example
-
-Your first TauPy app (only **8 lines** of logic):
-
+## Code example (Python UI)
 ```python
 from TauPy import App, VStack, Text, Button, State
 from TauPy.events import Click
 
-app = App("Hello TauPy", 600, 400)
+app = App("Hello TauPy", 800, 500)
 msg = State("Hello, TauPy!")
 
 @app.dispatcher.on_click("btn_hello")
@@ -66,139 +36,73 @@ async def hello(_: Click):
 
 @app.route("/")
 def home():
-    return VStack(
-        Text(msg),
-        Button("Click me", id="btn_hello"),
-    )
+    return VStack(Text(msg), Button("Click me", id="btn_hello"))
 
-app.run(VStack(id="main"))
-
+if __name__ == "__main__":
+    import asyncio
+    asyncio.run(app.run(VStack(id="root")))
 ```
 
-Run it:
+## Quick start (React front-end)
 ```bash
-taupy run
-```
-
-Instant window. Instant reactivity. Zero delays.
-
-
-## 🛠 TauPy CLI
-
-TauPy includes an official CLI.
-
-Create project
-
-```bash
-taupy new myapp
-```
-
-Run it
-
-```bash
-cd myapp
-taupy run
-```
-
-Development mode
-```bash
+taupy new [app_name]
+cd [app_name]
+npm install
 taupy dev
 ```
 
-Build for distribution
+## Build
 ```bash
 taupy build
 ```
+Pipeline:
+1) Build React/Vite (if present) → `target/dist`  
+2) `cargo build --release` for the launcher → `target/launcher`  
+3) Nuitka bundle backend → `target/app.exe`
 
-## 🧭 Routing
+## Performance snapshot (indicative)
 
-TauPy supports simple, very Pythonic routing:
+| Scenario | TauPy (Python + Rust) | PyQt / PySide | Tkinter | Electron |
+|--------|------------------------|---------------|----------|----------|
+| Cold start (release build) | ~300–600 ms | ~900 ms – 1.8 s | ~500–900 ms | ~1.5 – 3 s |
+| Hot reload (code → UI) | ~40–120 ms (WS diff) | Full widget refresh | Full redraw | ~200–500 ms |
+| UI update (state → render) | ~10–40 ms | QWidget update | Full widget update | Virtual DOM diff |
+| Bundle size | ~6–15 MB + dist | 40–80 MB | ~2–5 MB | 120+ MB |
+| UI stack | HTML/CSS (WebView) | Native Qt | Native Tk | Chromium |
 
-```python
-@app.route("/settings")
-def settings():
-    return Text("Settings page")
-```
+### Measurement conditions
 
-## 🧪 State System
+> Measurements taken on Windows 11, Ryzen 7 5800X, NVMe SSD.  
+> Release builds, minimal "hello world" applications.  
+> Numbers are indicative and vary by project size and configuration.
 
-```python
-count = State(0)
+## TauPy CLI
+- `taupy dev` — run backend + external front-end (Vite) with hot reload.
+- `taupy build` — build front-end, launcher, and Nuitka bundle into `target/`.
+- `taupy new <name>` — scaffold a new TauPy project.
 
-@app.dispatcher.on_click("inc")
-async def inc(_):
-    count.set(count() + 1)
-```
+## Dev vs Prod (auto)
+- Dev (`--dev`): external HTTP (Vite 5173), hot reload.
+- Prod: serves bundled `dist/` on 8000. Override with `TAUPY_EXTERNAL_HTTP` / `TAUPY_HTTP_PORT`.
 
-Auto-updates any <Text(lambda)> bound to this state.
+## Roadmap
+- Cross-platform launcher (Linux/macOS)
+- Native dialogs & notifications
+- Packaging presets (single-file)
+- Built-in icon set & theme presets
+- DevTools/inspector mode
+- Playground in browser
 
-## 🎨 Themes (DaisyUI x Tailwind)
+## Requirements
+- Windows 64-bit, Python 3.11+
+- Rust toolchain (launcher rebuild)
+- Node.js (for React/Vite, optional)
 
-TauPy ships with all DaisyUI themes.
+📜 License  
+TauPy is released under the MIT License. Free for commercial and personal use.
 
-```python
-await app.set_theme("synthwave")
-```
-
-Themes apply instantly.
-
-# 📅 Roadmap
-
-## ✔️ Completed
-- 🟩 **Routing**
-- 🟩 **State management**
-- 🟩 **Event system** (click / input)
-- 🟩 **WebSocket engine**
-- 🟩 **Automatic UI refresh**
-- 🟩 **Layout components** (HStack, VStack, Container…)
-- 🟩 **Custom components** (HTML Templates)
-- 🟩 **CLI**
-- 🟩 **Rust WebView2 launcher**
-- 🟩 **Theme switching** (DaisyUI)
-
----
-
-## 🚧 In Progress
-- 🟨 **Hot Reload**
-- 🟨 **Native dialogs** (Open File / Save File / Message Box)
-- 🟨 **Window API** (resize, fullscreen, minimize, position)
-- 🟨 **Background tasks**
-- 🟨 **Persistent storage** (local DB)
-- 🟨 **Animations & transitions**
-- 🟨 **DevTools inspector mode**
-- 🟨 **Widget playground** (browser-based)
-- 🟨 **Built-in icons library**
-
----
-
-## 🔜 Coming Soon
-- 🟦 **Cross-platform launcher** (Linux, macOS)
-- 🟦 **File-system bridge**
-- 🟦 **App packaging** (one-file executable)
-- 🟦 **Custom themes API**
-- 🟦 **Modal & Toast widgets**
-- 🟦 **Networking helpers** (HTTP/WebSocket client)
-
----
-
-## 🧭 Future Ideas
-- 🟪 **Gesture support** (touchscreens)
-- 🟪 **Drag & drop API**
-- 🟪 **Native notifications**
-- 🟪 **GPU-accelerated components**
-- 🟪 **Plugins ecosystem**
-- 🟪 **Visual UI builder**
-
-# 📜 License
-
-TauPy is released under the MIT License.
-Free for commercial and personal use.
-
-# 💬 Contributing
-
+💬 Contributing  
 Contributions are welcome!
 
-# ⭐ Support the Project
-
-If TauPy inspires you - please star the repository.
-Every ⭐ makes development faster ❤️
+⭐ Support the Project  
+If TauPy inspires you - please star the repository. Every ⭐ makes development faster ❤️
