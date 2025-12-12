@@ -16,4 +16,31 @@ pub struct AppConfig {
 
     #[arg(long)]
     pub dist: Option<String>,
+
+    #[arg(long, default_value_t = false)]
+    pub external: bool,
+
+    #[arg(long, default_value_t = false)]
+    pub frameless: bool,
+
+    #[arg(long, default_value_t = false)]
+    pub transparent: bool,
+
+    #[arg(long, default_value_t = false)]
+    pub always_on_top: bool,
+
+    #[arg(long, default_value_t = true, action = clap::ArgAction::Set)]
+    pub resizable: bool,
+
+    #[arg(long)]
+    pub min_width: Option<u32>,
+
+    #[arg(long)]
+    pub min_height: Option<u32>,
+
+    #[arg(long)]
+    pub max_width: Option<u32>,
+
+    #[arg(long)]
+    pub max_height: Option<u32>,
 }

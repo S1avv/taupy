@@ -1,6 +1,9 @@
+#![cfg_attr(target_os = "windows", windows_subsystem = "windows")]
+
 mod server;
 mod window;
 mod config;
+mod api;
 
 use clap::Parser;
 use config::AppConfig;
@@ -20,7 +23,9 @@ fn main() -> wry::Result<()> {
     let cfg = AppConfig::parse();
 
     let dist = taupy_dist_path(cfg.dist.clone());
-    server::start_http_server(dist, cfg.port);
+    if !cfg.external {
+        server::start_http_server(dist, cfg.port);
+    }
 
     window::open_window(&cfg)?;
 
