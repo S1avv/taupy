@@ -16,6 +16,13 @@
 
 Build desktop apps with **Python + Rust**, and drop in React/Vite when you want. Fast reloads, native window controls, and a tiny API surface.
 
+## Demo
+
+🎯 **Focus Timer Demo** — a small demo application showcasing TauPy window APIs,
+compact mode switching, and a React-based UI.
+
+👉 https://github.com/S1avv/taupy-focus
+
 ## Why TauPy
 - **Hybrid by design** - Python backend + Rust launcher; use Python widgets or a full React front-end.
 - **Hot dev loop** - edit → window refreshes near-instantly, no page reload dance.
