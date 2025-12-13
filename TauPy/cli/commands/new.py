@@ -24,29 +24,37 @@ def loading_animation(stop_flag):
     print("\r", end="")
 
 
-def choose_frontend(default="python"):
-    options = ["python", "react"]
+def choose_frontend(default="react"):
+    options = [
+        {"value": "react", "label": "react (recommended)"},
+        {"value": "python", "label": "python"},
+    ]
     if not sys.stdin.isatty():
         return default
 
     try:
         import msvcrt
     except ImportError:
+        values = [opt["value"] for opt in options]
         return click.prompt(
-            "Choose frontend template",
-            type=click.Choice(options, case_sensitive=False),
+            "Choose frontend template [react is recommended]",
+            type=click.Choice(values, case_sensitive=False),
             default=default,
             show_choices=True,
         ).lower()
 
-    idx = 0 if default == "python" else 1
-    header = "Choose frontend template (↑/↓ Enter):"
+    values = [opt["value"] for opt in options]
+    try:
+        idx = values.index(default)
+    except ValueError:
+        idx = 0
+    header = "Choose frontend template (Up/Down + Enter):"
 
     def redraw():
         sys.stdout.write("\x1b[2K\r" + header + "\n")
         for i, opt in enumerate(options):
-            marker = "●" if i == idx else "○"
-            sys.stdout.write(f"\x1b[2K\r  {marker} {opt}\n")
+            marker = ">" if i == idx else " "
+            sys.stdout.write(f"\x1b[2K\r  {marker} {opt['label']}\n")
         sys.stdout.write(f"\x1b[{len(options)+1}A")
         sys.stdout.flush()
 
@@ -60,7 +68,7 @@ def choose_frontend(default="python"):
             if ch in ("\r", "\n"):
                 sys.stdout.write(f"\x1b[{len(options)+1}B\r\x1b[0K")
                 sys.stdout.flush()
-                return options[idx]
+                return options[idx]["value"]
             if ch == "\xe0":
                 key = msvcrt.getwch()
                 if key == "H":
@@ -74,12 +82,14 @@ def choose_frontend(default="python"):
         sys.stdout.flush()
 
 
+
+
 @click.command()
 @click.argument("name")
 @click.option(
     "--frontend",
     "-f",
-    type=click.Choice(["python", "react"], case_sensitive=False),
+    type=click.Choice(["react", "python"], case_sensitive=False),
     default=None,
     help="Choose UI template: python (TauPy widgets) or react (Vite + React).",
 )
@@ -92,7 +102,7 @@ def new(name, frontend):
         return
 
     if not frontend:
-        frontend = choose_frontend(default="python")
+        frontend = choose_frontend(default="react")
 
     os.makedirs(project_path)
     launcher_dir = os.path.join(project_path, "launcher")
@@ -103,9 +113,9 @@ def new(name, frontend):
 
     if not frontend:
         frontend = click.prompt(
-            "Choose frontend template",
-            type=click.Choice(["python", "react"], case_sensitive=False),
-            default="python",
+            "Choose frontend template [react is recommended]",
+            type=click.Choice(["react", "python"], case_sensitive=False),
+            default="react",
             show_choices=True,
         ).lower()
 
