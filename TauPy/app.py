@@ -81,7 +81,11 @@ class App:
         if env_external_http is not None:
             external_http = env_external_http not in ("0", "false", "False")
         elif external_http is None:
-            external_http = dev_flag
+            if mode == AppMode.RAW_HTML:
+                external_http = dev_flag
+            else:
+                # In GENERATE_HTML mode we host dist ourselves even in dev.
+                external_http = False
 
         env_http_port = os.getenv("TAUPY_HTTP_PORT")
         if env_http_port and env_http_port.isdigit():
