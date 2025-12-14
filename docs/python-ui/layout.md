@@ -132,7 +132,7 @@ ui = Container(
 
 ## 8. Tweaking spacing & styles
 
-Every container accepts arbitrary HTML attributes. To add your own Tailwind classes, pass them via `class_` (note the trailing underscore—`class` is a reserved Python keyword):
+Every container accepts arbitrary HTML attributes. To add your own Tailwind classes, pass them via `class_` (note the trailing underscore-`class` is a reserved Python keyword):
 
 ```python
 VStack(
