@@ -97,6 +97,12 @@ Pipeline:
 - Dev (`--dev`): external HTTP (Vite 5173), hot reload.
 - Prod: serves bundled `dist/` on 8000. Override with `TAUPY_EXTERNAL_HTTP` / `TAUPY_HTTP_PORT`.
 
+## 📘 Documentation
+
+Full documentation is available here:
+
+👉 **https://s1avv.github.io/taupy/**
+
 ## Roadmap
 - Cross-platform launcher (Linux/macOS)
 - Native dialogs & notifications
