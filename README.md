@@ -82,9 +82,9 @@ Pipeline:
 > Numbers are indicative and vary by project size and configuration.
 
 ## TauPy CLI
-- `taupy dev` — run backend + external front-end (Vite) with hot reload.
-- `taupy build` — build front-end, launcher, and Nuitka bundle into `target/`.
-- `taupy new <name>` — scaffold a new TauPy project.
+- `taupy dev` - run backend + external front-end (Vite) with hot reload.
+- `taupy build` - build front-end, launcher, and Nuitka bundle into `target/`.
+- `taupy new <name>` - scaffold a new TauPy project.
 
 ## Dev vs Prod (auto)
 - Dev (`--dev`): external HTTP (Vite 5173), hot reload.

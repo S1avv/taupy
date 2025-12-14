@@ -1,0 +1,86 @@
+site_name: TauPy
+site_description: Python-first desktop framework with Rust launcher
+site_url: https://s1avv.github.io/taupy/
+repo_url: https://github.com/S1avv/taupy
+repo_name: S1avv/taupy
+
+docs_dir: docs
+
+theme:
+  name: material
+  language: en
+
+  font:
+    text: Inter
+    code: JetBrains Mono
+
+  palette:
+    - scheme: default
+      primary: black
+      accent: deep purple
+      toggle:
+        icon: material/weather-night
+        name: Switch to dark mode
+
+    - scheme: slate
+      primary: black
+      accent: deep purple
+      toggle:
+        icon: material/weather-sunny
+        name: Switch to light mode
+
+  features:
+    - navigation.instant
+    - navigation.instant.progress
+    - navigation.tracking
+    - navigation.sections
+    - navigation.expand
+    - navigation.top
+    - navigation.footer
+
+    - toc.follow
+
+    - search.highlight
+    - content.code.copy
+    - content.code.annotate
+
+nav:
+  - Home: index.md
+  - Installation: install.md
+  - Quick Start: quickstart.md
+  - How It Works: how-it-works.md
+
+  - CLI:
+      - Overview: cli/index.md
+      - new: cli/new.md
+      - dev: cli/dev.md
+      - build: cli/build.md
+      - config: cli/config.md
+      - doctor: cli/doctor.md
+      - info: cli/info.md
+
+  - Python UI:
+      - Overview: python-ui/overview.md
+      - State: python-ui/state.md
+      - Layout: python-ui/layout.md
+
+  - React Frontend: react.md
+  - Vanilla Frontend: vanilla.md
+  - Build & Distribution: build.md
+  - Troubleshooting: troubleshooting.md
+
+markdown_extensions:
+  - admonition
+  - pymdownx.details
+  - pymdownx.superfences
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.snippets
+
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/S1avv/taupy

@@ -21,7 +21,7 @@ from .events.events import Resize
 from .state import State
 from .server import TauServer
 
-from .reloader import start_hot_reload, free_port, clear_console
+from .reloader import start_hot_reload, start_static_reload, free_port, clear_console
 
 
 class AppMode(Enum):
@@ -104,12 +104,14 @@ class App:
         self.mode = mode
         self.http_port = http_port
         self.external_http = external_http
+        self.ws_port = 8765
 
         self.server = TauServer(self)
         self.connect_handlers: list[Callable[[], Awaitable[None] | None]] = []
 
         self.dev = dev_flag
         self.no_window = "--no-window" in sys.argv
+        self.open_devtools = "--open-devtools" in sys.argv or os.getenv("TAUPY_OPEN_DEVTOOLS") == "1"
         self.frameless = frameless
         self.transparent = transparent
         self.always_on_top = always_on_top
@@ -142,6 +144,11 @@ class App:
         if self.mode == AppMode.GENERATE_HTML and root_component is None:
             raise ValueError("root_component is required when mode=AppMode.GENERATE_HTML")
 
+        env_ws_port = os.getenv("TAUPY_WS_PORT")
+        if env_ws_port and env_ws_port.isdigit():
+            port = int(env_ws_port)
+        self.ws_port = port
+
         self.root_component = root_component
         if self.mode == AppMode.GENERATE_HTML:
             self._render_and_save_html(root_component)  # type: ignore[arg-type]
@@ -168,8 +175,11 @@ class App:
                 self._window_watch_task = asyncio.create_task(self._watch_window_exit())
                 self._window_stdout_task = asyncio.create_task(self._consume_window_stdout())
 
-        if self.dev and self.mode == AppMode.GENERATE_HTML:
-            self._reload_task = asyncio.create_task(start_hot_reload(self))
+        if self.dev:
+            if self.mode == AppMode.GENERATE_HTML:
+                self._reload_task = asyncio.create_task(start_hot_reload(self))
+            elif self.mode == AppMode.RAW_HTML:
+                self._reload_task = asyncio.create_task(start_static_reload(self))
 
         loop = asyncio.get_running_loop()
 
@@ -366,6 +376,8 @@ class App:
             args.append("--always-on-top")
         if not self.resizable:
             args.append("--resizable=false")
+        if self.open_devtools:
+            args.append("--open-devtools")
         if self.min_width is not None:
             args.append(f"--min-width={self.min_width}")
         if self.min_height is not None:
@@ -452,7 +464,7 @@ class App:
             except:
                 pass
 
-            free_port(8765)
+            free_port(self.ws_port)
 
             try:
                 self.window_process.wait(timeout=2)

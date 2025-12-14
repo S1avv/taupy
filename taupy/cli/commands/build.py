@@ -3,6 +3,7 @@ import shutil
 import subprocess
 import sys
 import click
+import tomllib
 from typing import Optional
 
 ICON_INFO = "ℹ"
@@ -18,11 +19,30 @@ DLL_FILE = os.path.join(UTILS_DIR, "WebView2Loader.dll")
 TAUPY_EXE = os.path.join(UTILS_DIR, "taupy.exe")
 
 
+def _load_taupy_config(cwd: str) -> dict:
+    cfg_path = os.path.join(cwd, "taupy.toml")
+    if not os.path.exists(cfg_path):
+        return {}
+    try:
+        with open(cfg_path, "rb") as fh:
+            return tomllib.load(fh)
+    except Exception as exc:
+        click.secho(f"{ICON_WARN} Could not read taupy.toml: {exc}", fg="yellow")
+        return {}
+
+
 def _copy_if_exists(src: str, dst_dir: str) -> None:
     if not os.path.exists(src):
         click.secho(f"Missing artifact: {src}", fg="red")
         return
     shutil.copy(src, os.path.join(dst_dir, os.path.basename(src)))
+
+
+def _copy_dist_folder(dist_src: str, dist_dst: str) -> None:
+    if not os.path.exists(dist_src):
+        click.secho(f"{ICON_WARN} dist folder not found at {dist_src}; skipping static copy.", fg="yellow")
+        return
+    shutil.copytree(dist_src, dist_dst, dirs_exist_ok=True)
 
 
 def _detect_frontend_dir(cwd: str) -> Optional[str]:
@@ -52,6 +72,12 @@ def build():
     onefile_build_dir = os.path.join(target_dir, "main.onefile-build")
     frontend_dir = _detect_frontend_dir(cwd)
     main_py = os.path.join(cwd, "main.py")
+    config = _load_taupy_config(cwd)
+    build_cfg = config.get("build", {})
+    frontend_cfg = config.get("frontend", {}) if isinstance(config, dict) else {}
+    modules_cfg = build_cfg.get("modules", {}) if isinstance(build_cfg, dict) else {}
+    extra_modules = [name for name, enabled in modules_cfg.items() if enabled]
+    frontend_type = (frontend_cfg.get("type") or "").lower() if isinstance(frontend_cfg, dict) else ""
 
     if not os.path.exists(main_py):
         click.secho(f"{ICON_ERR} main.py not found in {cwd}. Run from your project root.", fg="red")
@@ -84,7 +110,9 @@ def build():
             _copy_if_exists(cand, launcher_dir)
             break
 
-    if frontend_dir:
+    dist_src = os.path.join(cwd, "dist")
+
+    if frontend_dir and frontend_type == "react":
         npm_bin = shutil.which("npm") or shutil.which("npm.cmd")
         if npm_bin:
             click.secho(f"{ICON_INFO} Building React frontend...", fg="cyan")
@@ -99,7 +127,8 @@ def build():
         else:
             click.secho(f"{ICON_WARN} npm not found; skipping frontend build.", fg="yellow")
     else:
-        click.secho(f"{ICON_WARN} No frontend detected; skipping React build.", fg="yellow")
+        dist_dst = os.path.join(target_dir, "dist")
+        _copy_dist_folder(dist_src, dist_dst)
 
     try:
         import websockets  # noqa: F401
@@ -130,6 +159,10 @@ def build():
         f"--jobs={jobs}",
         main_py,
     ]
+    if extra_modules:
+        click.secho(f"{ICON_INFO} Including extra modules: {', '.join(extra_modules)}", fg="cyan")
+        for mod in extra_modules:
+            cmd.append(f"--include-module={mod}")
     if sys.platform == "win32":
         cmd.extend([
             "--windows-console-mode=disable",

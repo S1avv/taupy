@@ -43,4 +43,7 @@ pub struct AppConfig {
 
     #[arg(long)]
     pub max_height: Option<u32>,
+
+    #[arg(long, default_value_t = false)]
+    pub open_devtools: bool,
 }
