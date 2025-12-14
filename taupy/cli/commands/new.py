@@ -10,10 +10,12 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__fil
 UTILS_DIR = os.path.join(BASE_DIR, "utils")
 TEMPLATE_PY = os.path.join(UTILS_DIR, "template.py")
 TEMPLATE_REACT = os.path.join(UTILS_DIR, "template_react.py")
+TEMPLATE_VANILLA = os.path.join(UTILS_DIR, "template_vanilla.py")
 DLL_FILE = os.path.join(UTILS_DIR, "WebView2Loader.dll")
 CLIENTJS = os.path.join(UTILS_DIR, "client.js")
 TAUPY_EXE = os.path.join(UTILS_DIR, "taupy.exe")
 VITE_TEMPLATE_DIR = os.path.join(BASE_DIR, "templates", "vite-react")
+VANILLA_TEMPLATE_DIR = os.path.join(BASE_DIR, "templates", "vanilla")
 
 
 def loading_animation(stop_flag):
@@ -27,6 +29,7 @@ def loading_animation(stop_flag):
 def choose_frontend(default="react"):
     options = [
         {"value": "react", "label": "react (recommended)"},
+        {"value": "vanilla", "label": "vanilla"},
         {"value": "python", "label": "python"},
     ]
     if not sys.stdin.isatty():
@@ -82,6 +85,72 @@ def choose_frontend(default="react"):
         sys.stdout.flush()
 
 
+def _prompt_value(message: str, default, value_type=str):
+    if sys.stdin.isatty():
+        return click.prompt(message, default=default, type=value_type, show_default=True)
+    return default
+
+
+def _prompt_bool(message: str, default: bool) -> bool:
+    if sys.stdin.isatty():
+        return click.confirm(message, default=default)
+    return default
+
+
+def _collect_config(frontend_choice: str) -> dict:
+    frontend_default = frontend_choice or "react"
+    click.secho("\n=== TauPy dev setup ===", fg="cyan", bold=True)
+    click.echo(f"Frontend template: {frontend_default}")
+
+    click.secho("\n[Dev server]", fg="cyan")
+    click.echo("  Port for TauPy backend or your external dev server.")
+    dev_port = _prompt_value("Dev HTTP port", 8000, int)
+
+    click.secho("\n[Hot reload]", fg="cyan")
+    click.echo('  Live reload transport (default "ws").')
+    hot_reload = str(_prompt_value("Hot reload mode", "ws", str)).strip() or "ws"
+
+    click.secho("\n[Frontend]", fg="cyan")
+    click.echo(f"  Using frontend template: {frontend_default}")
+    frontend_type = frontend_default.lower()
+
+    click.secho("\n[External HTTP]", fg="cyan")
+    click.echo("  URL of the dev server used by the frontend (Vite, etc).")
+    external_http_default = "http://localhost:5173"
+    external_http = str(_prompt_value("External frontend URL", external_http_default, str))
+
+    click.secho("\n[Build]", fg="cyan")
+    click.echo("  Backend bundling preferences for production.")
+    onefile = _prompt_bool("Bundle backend as single executable (onefile)?", False)
+    strip_bin = _prompt_bool("Strip binaries after build?", True)
+
+    return {
+        "dev_port": dev_port,
+        "hot_reload": hot_reload,
+        "frontend_type": frontend_type,
+        "external_http": external_http,
+        "onefile": onefile,
+        "strip": strip_bin,
+    }
+
+
+def _write_taupy_config(project_path: str, cfg: dict) -> None:
+    cfg_path = os.path.join(project_path, "taupy.toml")
+    content = (
+        "[dev]\n"
+        f"port = {cfg['dev_port']}\n"
+        f'hot_reload = "{cfg["hot_reload"]}"\n'
+        "\n"
+        "[frontend]\n"
+        f'type = "{cfg["frontend_type"]}"\n'
+        f'external_http = "{cfg["external_http"]}"\n'
+        "\n"
+        "[build]\n"
+        f"onefile = {str(cfg['onefile']).lower()}\n"
+        f"strip = {str(cfg['strip']).lower()}\n"
+    )
+    with open(cfg_path, "w", encoding="utf-8") as fh:
+        fh.write(content)
 
 
 @click.command()
@@ -89,9 +158,9 @@ def choose_frontend(default="react"):
 @click.option(
     "--frontend",
     "-f",
-    type=click.Choice(["react", "python"], case_sensitive=False),
+    type=click.Choice(["react", "vanilla", "python"], case_sensitive=False),
     default=None,
-    help="Choose UI template: python (TauPy widgets) or react (Vite + React).",
+    help="Choose UI template: react (Vite), vanilla (HTML/CSS/JS), or python (TauPy widgets).",
 )
 def new(name, frontend):
     project_path = os.path.abspath(name)
@@ -104,6 +173,9 @@ def new(name, frontend):
     if not frontend:
         frontend = choose_frontend(default="react")
 
+    config_answers = _collect_config(frontend)
+    frontend = config_answers["frontend_type"]
+
     os.makedirs(project_path)
     launcher_dir = os.path.join(project_path, "launcher")
     os.makedirs(launcher_dir)
@@ -114,12 +186,17 @@ def new(name, frontend):
     if not frontend:
         frontend = click.prompt(
             "Choose frontend template [react is recommended]",
-            type=click.Choice(["react", "python"], case_sensitive=False),
+            type=click.Choice(["react", "vanilla", "python"], case_sensitive=False),
             default="react",
             show_choices=True,
         ).lower()
 
-    template_file = TEMPLATE_REACT if frontend == "react" else TEMPLATE_PY
+    if frontend == "react":
+        template_file = TEMPLATE_REACT
+    elif frontend == "vanilla":
+        template_file = TEMPLATE_VANILLA
+    else:
+        template_file = TEMPLATE_PY
     try:
         shutil.copy(template_file, os.path.join(project_path, "main.py"))
     except FileNotFoundError:
@@ -146,6 +223,14 @@ def new(name, frontend):
                 shutil.copytree(VITE_TEMPLATE_DIR, project_path, dirs_exist_ok=True)
         except Exception as e:
             click.secho(f"Could not copy React template: {e}", fg="red")
+    elif frontend == "vanilla":
+        try:
+            if os.path.exists(VANILLA_TEMPLATE_DIR):
+                shutil.copytree(VANILLA_TEMPLATE_DIR, project_path, dirs_exist_ok=True)
+        except Exception as e:
+            click.secho(f"Could not copy Vanilla template: {e}", fg="red")
+
+    _write_taupy_config(project_path, config_answers)
 
     stop_flag = {"stop": False}
     thread = threading.Thread(target=loading_animation, args=(stop_flag,))

@@ -76,7 +76,6 @@ if (!window._tauInputPatched) {
     window._tauInputPatched = true;
 }
 
-// Forward native window events back to the backend so Python can react.
 if (!window._tauWindowBridgePatched) {
     if (window.taupyNative && typeof window.taupyNative.onEvent === "function") {
         window.taupyNative.onEvent((evt) => {

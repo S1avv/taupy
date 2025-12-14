@@ -1,8 +1,8 @@
 # Changelog
 
-## [0.0.3] – 2025-12-13
+## [0.0.4] - 2025-12-14
 
-Fixes a critical packaging issue on case-sensitive filesystems
-that could prevent TauPy from starting.
-
-If you installed 0.0.2 and it failed to run, please upgrade.
+- feat: added vanilla frontend template and new CLI commands (`config`, `doctor`, `info`).
+- docs: expanded guides for CLI commands, React integration, and the vanilla template.
+- refactor: reloader now watches static files in vanilla mode for live reload.
+- build: bumped wry to enable the devtools feature.

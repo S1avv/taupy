@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TauPy Vanilla</title>
+    <link rel="stylesheet" href="./style.css">
+</head>
+<body>
+    <div class="app">
+        <main class="panel">
+            <h1>Vanilla starter</h1>
+            <p>Edit <code>dist/</code> files and keep this window open to see instant updates.</p>
+
+            <div class="grid">
+                <div>
+                    <div class="label">Events sent</div>
+                    <div class="value" id="sent-count">0</div>
+                </div>
+            </div>
+
+            <div class="actions">
+                <button class="btn" id="send-btn" data-component-id="taupy-sample">
+                    Send test event
+                </button>
+            </div>
+        </main>
+    </div>
+
+    <script src="./client.js"></script>
+    <script type="module" src="./main.js"></script>
+</body>
+</html>

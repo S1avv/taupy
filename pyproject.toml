@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "taupy-framework"
-version = "0.0.3"
+version = "0.0.4"
 description = "TauPy Framework"
 authors = ["S1avv"]
 readme = "README.md"

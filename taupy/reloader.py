@@ -127,3 +127,23 @@ async def start_hot_reload(app) -> None:
             asyncio.create_task(module.main())
         else:
             print(f"[HMR] ERROR: main() not found in {app.root_module_name}")
+
+
+async def start_static_reload(app, watch_dir: str = "dist") -> None:
+    """
+    Watches the static dist folder and triggers a page reload on change.
+    Intended for RAW_HTML mode projects (vanilla).
+    """
+    global _last_reload
+
+    print(f"[HMR] Watching {watch_dir} for static changes")
+
+    await asyncio.sleep(0.4)
+
+    async for changes in awatch(watch_dir):
+        now = time.time()
+        if now - _last_reload < 0.3:
+            continue
+        _last_reload = now
+        print("[HMR] Static changes detected:", changes)
+        await app.hot_reload_broadcast("hot_reload")

@@ -125,6 +125,7 @@ pub fn open_window(cfg: &AppConfig) -> wry::Result<()> {
     let webview = WebViewBuilder::new(window)?
         .with_url(&url)?
         .with_initialization_script(init_script)
+        .with_devtools(cfg.open_devtools)
         .with_ipc_handler(move |win, req| {
             if req == "drag" {
                 let _ = win.drag_window();
@@ -137,6 +138,10 @@ pub fn open_window(cfg: &AppConfig) -> wry::Result<()> {
             }
         })
         .build()?;
+
+    if cfg.open_devtools {
+        let _ = webview.open_devtools();
+    }
 
     thread::spawn({
         let proxy = proxy.clone();
