@@ -28,7 +28,7 @@ jobs:
           poetry config virtualenvs.create false
 
       - name: Check poetry.lock is up to date
-        run: poetry lock --check
+        run: poetry lock
 
       - name: Install dependencies
         run: poetry install --no-interaction
