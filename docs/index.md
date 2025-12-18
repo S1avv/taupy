@@ -13,7 +13,7 @@
 
 ```bash
 # Install
-pip install taupy
+pip install taupy-framework
 
 # Scaffold a project
 taupy new my_app
