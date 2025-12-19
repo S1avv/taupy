@@ -5,7 +5,7 @@ from typing import Any, Awaitable, Callable, Dict, Optional
 from .events.events import Click, Input
 
 
-EventHandler = Callable[[Any], Awaitable[None]]
+EventHandler = Callable[[Any], Awaitable[Any]]
 
 
 class Dispatcher:

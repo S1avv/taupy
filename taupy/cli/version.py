@@ -1,25 +1,29 @@
+import importlib.metadata
+
+import click
 import requests
 from packaging import version
+
 
 def check_for_updates():
     try:
         local = importlib.metadata.version("taupy")
 
-        r = requests.get(
+        response = requests.get(
             "https://api.github.com/repos/S1avv/taupy/releases/latest",
-            timeout=3
+            timeout=3,
         )
-        latest = r.json()["tag_name"]
+        latest = response.json()["tag_name"]
 
         if version.parse(latest) > version.parse(local):
             click.secho(
-                f"⚠ TauPy {latest} is available! You have {local}.",
-                fg="yellow"
+                f"[!] TauPy {latest} is available! You have {local}.",
+                fg="yellow",
             )
             click.secho("Update with:", fg="cyan")
             click.secho("    pip install --upgrade taupy", fg="green")
         else:
-            click.secho("✔ TauPy is up to date.", fg="green")
+            click.secho("TauPy is up to date.", fg="green")
 
     except Exception:
         pass

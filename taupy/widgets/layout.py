@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, List
+from typing import Any
 from .component import Component
 
 
@@ -25,7 +25,7 @@ class HStack(Component):
         props = _props_to_str(self.props)
         id_attr = f'id="{self.id}"' if self.id else ""
         data_attr = f'data-component-id="{self.id}"' if self.id else ""
-        return f'<div {id_attr} {props} {data_attr}>{children_html}</div>'
+        return f"<div {id_attr} {props} {data_attr}>{children_html}</div>"
 
 
 class VStack(Component):
@@ -45,7 +45,7 @@ class VStack(Component):
         props = _props_to_str(self.props)
         id_attr = f'id="{self.id}"' if self.id else ""
         data_attr = f'data-component-id="{self.id}"' if self.id else ""
-        return f'<div {id_attr} {props} {data_attr}>{children_html}</div>'
+        return f"<div {id_attr} {props} {data_attr}>{children_html}</div>"
 
 
 class Center(Component):
@@ -121,4 +121,4 @@ class Spacer(Component):
         props = _props_to_str(self.props)
         id_attr = f'id="{self.id}"' if self.id else ""
         data_attr = f'data-component-id="{self.id}"' if self.id else ""
-        return f'<div {id_attr} {props} {data_attr}></div>'
+        return f"<div {id_attr} {props} {data_attr}></div>"

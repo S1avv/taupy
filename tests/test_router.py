@@ -1,5 +1,6 @@
 from taupy.router import Router
 
+
 def test_router_register_and_get():
     r = Router()
 

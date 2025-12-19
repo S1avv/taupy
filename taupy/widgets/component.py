@@ -1,5 +1,5 @@
 import uuid
-import asyncio
+
 
 class Component:
     _id_counter = 0
@@ -8,7 +8,7 @@ class Component:
         self.props = kwargs
         self.children = self.props.pop("children", []) or []
 
-        self.app = None   
+        self.app = None
 
         provided_id = self.props.pop("id", None)
         if provided_id is not None:
@@ -27,11 +27,9 @@ class Component:
 
         new_html = self.render()
 
-        await self.app.server.broadcast({
-            "type": "update_html",
-            "id": self.id,
-            "html": new_html
-        })
+        await self.app.server.broadcast(
+            {"type": "update_html", "id": self.id, "html": new_html}
+        )
 
     def render(self):
         return "".join(

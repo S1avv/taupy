@@ -20,10 +20,15 @@ def _load_config(cwd: str) -> dict:
 
 
 def _detect_webview2_version() -> Optional[str]:
-    # Check default installation directories for Edge WebView2
     candidates = [
-        Path(os.environ.get("ProgramFiles(x86)", "")) / "Microsoft" / "EdgeWebView" / "Application",
-        Path(os.environ.get("ProgramFiles", "")) / "Microsoft" / "EdgeWebView" / "Application",
+        Path(os.environ.get("ProgramFiles(x86)", ""))
+        / "Microsoft"
+        / "EdgeWebView"
+        / "Application",
+        Path(os.environ.get("ProgramFiles", ""))
+        / "Microsoft"
+        / "EdgeWebView"
+        / "Application",
     ]
     versions = []
     for base in candidates:
@@ -75,7 +80,9 @@ def info():
     except importlib.metadata.PackageNotFoundError:
         taupy_ver = "unknown"
 
-    py_ver = f"{sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}"
+    py_ver = (
+        f"{sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}"
+    )
     os_str = f"{platform.system()} {platform.release()}"
     webview_ver = _detect_webview2_version() or "not detected"
     frontend = _detect_frontend(cwd, cfg)

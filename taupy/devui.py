@@ -1,10 +1,8 @@
 from colorama import Fore, Style, init
 from .reloader import clear_console
 
-import platform
 import os
 import sys
-import psutil
 
 init(autoreset=True)
 
@@ -14,8 +12,16 @@ class DevUI:
     def banner(title: str, port: int, ws_port: int = 8765, dev: bool = False):
         clear_console()
 
-        mode_str = f"{Fore.GREEN}Development{Fore.WHITE}" if dev else f"{Fore.GREEN}Production{Fore.WHITE}"
-        hmr_str = f"{Fore.GREEN}Enabled{Fore.WHITE}" if dev else f"{Fore.RED}Disabled{Fore.WHITE}"
+        mode_str = (
+            f"{Fore.GREEN}Development{Fore.WHITE}"
+            if dev
+            else f"{Fore.GREEN}Production{Fore.WHITE}"
+        )
+        hmr_str = (
+            f"{Fore.GREEN}Enabled{Fore.WHITE}"
+            if dev
+            else f"{Fore.RED}Disabled{Fore.WHITE}"
+        )
 
         print(
             f"""
@@ -37,7 +43,9 @@ class DevUI:
     @staticmethod
     def hmr_trigger(files):
         clean = ", ".join([f.split("\\")[-1] for f in files])
-        print(f"{Fore.MAGENTA}{Style.BRIGHT}HMR  {Style.RESET_ALL}reload triggered by {Fore.WHITE}{clean}")
+        print(
+            f"{Fore.MAGENTA}{Style.BRIGHT}HMR  {Style.RESET_ALL}reload triggered by {Fore.WHITE}{clean}"
+        )
 
     @staticmethod
     def restart():

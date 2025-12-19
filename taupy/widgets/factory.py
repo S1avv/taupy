@@ -33,7 +33,9 @@ def Component(template: str) -> Type[BaseComponent]:
     class TemplateComponent(BaseComponent):
         """Dynamically generated UI component based on a template."""
 
-        def __init__(self, *children: BaseComponent, id: str | None = None, **props: Any) -> None:
+        def __init__(
+            self, *children: BaseComponent, id: str | None = None, **props: Any
+        ) -> None:
             super().__init__(id=id, children=list(children), **props)
 
             self.template_props: Dict[str, Any] = props
