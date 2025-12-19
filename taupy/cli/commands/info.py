@@ -20,7 +20,6 @@ def _load_config(cwd: str) -> dict:
 
 
 def _detect_webview2_version() -> Optional[str]:
-    # Check default installation directories for Edge WebView2
     candidates = [
         Path(os.environ.get("ProgramFiles(x86)", ""))
         / "Microsoft"

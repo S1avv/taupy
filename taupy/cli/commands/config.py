@@ -53,7 +53,6 @@ def _emit_table(name: str, table: dict) -> list[str]:
 
 def _dump_config(data: dict) -> str:
     lines: list[str] = []
-    # Root-level primitives first (rare)
     for key, val in data.items():
         if isinstance(val, dict):
             continue
@@ -64,7 +63,6 @@ def _dump_config(data: dict) -> str:
     for key, val in data.items():
         if isinstance(val, dict):
             lines.extend(_emit_table(key, val))
-    # remove trailing blank
     while lines and lines[-1] == "":
         lines.pop()
     return "\n".join(lines) + ("\n" if lines else "")

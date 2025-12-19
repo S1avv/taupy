@@ -78,7 +78,6 @@ def _check_webview2():
         except subprocess.CalledProcessError:
             continue
 
-    # Fallback: check default install directories
     candidates = [
         os.path.join(
             os.environ.get("ProgramFiles(x86)", ""),

@@ -26,5 +26,4 @@ def check_for_updates():
             click.secho("TauPy is up to date.", fg="green")
 
     except Exception:
-        # Best-effort update check; errors are non-fatal.
         pass
