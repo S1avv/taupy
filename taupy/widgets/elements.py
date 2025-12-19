@@ -189,13 +189,13 @@ class Image_(Component):
     def render(self) -> str:
         props_str = _props_to_str(self.props)
 
-        attrs = [f'src="{self.src}"', f'alt="{self.alt}"']
+        attr_parts = [f'src="{self.src}"', f'alt="{self.alt}"']
         if self.width:
-            attrs.append(f'width="{self.width}"')
+            attr_parts.append(f'width="{self.width}"')
         if self.height:
-            attrs.append(f'height="{self.height}"')
+            attr_parts.append(f'height="{self.height}"')
 
-        attrs = " ".join(attrs)
+        attrs = " ".join(attr_parts)
 
         return (
             f'<img id="{self.id}" {attrs} {props_str} data-component-id="{self.id}" />'

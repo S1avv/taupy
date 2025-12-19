@@ -21,7 +21,7 @@ class TauFilter(DefaultFilter):
         return super().__call__(change, path)
 
 
-_last_reload = 0
+_last_reload: float = 0.0
 
 
 def clear_console():

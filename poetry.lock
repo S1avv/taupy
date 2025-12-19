@@ -1055,6 +1055,31 @@ files = [
 ]
 
 [[package]]
+name = "types-colorama"
+version = "0.4.15.20250801"
+description = "Typing stubs for colorama"
+optional = false
+python-versions = ">=3.9"
+files = [
+    {file = "types_colorama-0.4.15.20250801-py3-none-any.whl", hash = "sha256:b6e89bd3b250fdad13a8b6a465c933f4a5afe485ea2e2f104d739be50b13eea9"},
+    {file = "types_colorama-0.4.15.20250801.tar.gz", hash = "sha256:02565d13d68963d12237d3f330f5ecd622a3179f7b5b14ee7f16146270c357f5"},
+]
+
+[[package]]
+name = "types-requests"
+version = "2.32.4.20250913"
+description = "Typing stubs for requests"
+optional = false
+python-versions = ">=3.9"
+files = [
+    {file = "types_requests-2.32.4.20250913-py3-none-any.whl", hash = "sha256:78c9c1fffebbe0fa487a418e0fa5252017e9c60d1a2da394077f1780f655d7e1"},
+    {file = "types_requests-2.32.4.20250913.tar.gz", hash = "sha256:abd6d4f9ce3a9383f269775a9835a4c24e5cd6b9f647d64f88aa4613c33def5d"},
+]
+
+[package.dependencies]
+urllib3 = ">=2"
+
+[[package]]
 name = "typing-extensions"
 version = "4.15.0"
 description = "Backported and Experimental Type Hints for Python 3.9+"
@@ -1443,4 +1468,4 @@ system = ["psutil"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.10,<3.12"
-content-hash = "e9cc8acd0555d33338b15a7ab569a30aaa5704c1cd995a353af8bce735b98130"
+content-hash = "52ac7cb6ea168fc58121ea58c085d521947155dc0314f5d4b5f4e6689a04a337"

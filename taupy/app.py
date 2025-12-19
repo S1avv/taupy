@@ -8,6 +8,7 @@ import sys
 import subprocess
 from typing import Any, Awaitable, Callable, Optional
 from enum import Enum
+from types import CellType
 
 import websockets
 
@@ -124,13 +125,13 @@ class App:
         self.max_height = max_height
 
         self._shutting_down = False
-        self.window_process = None
-        self._reload_task = None
-        self._window_watch_task = None
+        self.window_process: subprocess.Popen[str] | None = None
+        self._reload_task: asyncio.Task[None] | None = None
+        self._window_watch_task: asyncio.Task[None] | None = None
         self._window_event_handlers: list[
             Callable[[str, dict], Awaitable[None] | None]
         ] = []
-        self._window_stdout_task = None
+        self._window_stdout_task: asyncio.Task[None] | None = None
 
     async def run(
         self, root_component: Optional[Component] = None, port: int = 8765
@@ -252,7 +253,7 @@ class App:
             func = component.value
             states: set[State] = set()
 
-            closure = func.__closure__ or []
+            closure: tuple[CellType, ...] = func.__closure__ or ()
             for cell in closure:
                 val = cell.cell_contents
                 if isinstance(val, State):
@@ -265,11 +266,11 @@ class App:
                         states.add(val)
 
             for st in states:
-                st.subscribe(
-                    lambda _v, cid=component.id, f=func: self._update_text_component(
-                        cid, f()
-                    )
-                )
+
+                def _on_state_change(_v, cid=component.id, f=func):
+                    self._update_text_component(cid, f())
+
+                st.subscribe(_on_state_change)
 
         if isinstance(component, Button_):
             pass
@@ -312,8 +313,10 @@ class App:
 
         new_screen: Component = result
 
-        if self.root_component:
-            self.root_component.children = [new_screen]
+        if not self.root_component:
+            raise RuntimeError("App has no root component to navigate from.")
+
+        self.root_component.children = [new_screen]
 
         self._bind_events_and_states(new_screen)
 
