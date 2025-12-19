@@ -48,6 +48,7 @@ nav:
   - Home: index.md
   - Installation: install.md
   - Quick Start: quickstart.md
+  - Configuration: configuration.md
   - How It Works: how-it-works.md
 
   - CLI:
@@ -63,10 +64,13 @@ nav:
       - Overview: python-ui/overview.md
       - State: python-ui/state.md
       - Layout: python-ui/layout.md
+      - Routing: routing.md
+      - API Reference: python-ui/api.md
 
   - React Frontend: react.md
   - Vanilla Frontend: vanilla.md
   - Build & Distribution: build.md
+  - FAQ: faq.md
   - Troubleshooting: troubleshooting.md
 
 markdown_extensions:
