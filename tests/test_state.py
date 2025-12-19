@@ -1,5 +1,6 @@
 from taupy.state import State
 
+
 def test_state_basic():
     s = State(10)
     assert s() == 10

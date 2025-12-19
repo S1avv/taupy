@@ -23,6 +23,7 @@ class TauFilter(DefaultFilter):
 
 _last_reload = 0
 
+
 def clear_console():
     """
     Clear the console if we are attached to one.
@@ -41,13 +42,16 @@ def clear_console():
     else:
         os.system("clear")
 
+
 def free_port(port: int):
     try:
         if sys.platform.startswith("win"):
             try:
                 result = subprocess.check_output(
-                    f'netstat -ano | findstr :{port}',
-                    shell=True, encoding="utf-8", errors="ignore"
+                    f"netstat -ano | findstr :{port}",
+                    shell=True,
+                    encoding="utf-8",
+                    errors="ignore",
                 )
             except subprocess.CalledProcessError as cpe:
                 if cpe.returncode == 1:
@@ -73,6 +77,7 @@ def free_port(port: int):
     except Exception as e:
         print("[HMR] Could not free port:", e)
 
+
 async def start_hot_reload(app) -> None:
     """
     Watches for file changes and restarts the Python module
@@ -95,14 +100,12 @@ async def start_hot_reload(app) -> None:
 
         try:
             import py_compile
+
             py_compile.compile(app.root_module_path, doraise=True)
         except Exception as e:
             err = "".join(traceback.format_exception(e))
             print("[HMR] Syntax error:\n", err)
-        await app.server.broadcast({
-            "type": "hmr_error",
-            "message": err
-        })
+        await app.server.broadcast({"type": "hmr_error", "message": err})
         continue
 
     await app.hot_reload_broadcast("hot_reload")

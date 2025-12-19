@@ -87,7 +87,9 @@ def choose_frontend(default="react"):
 
 def _prompt_value(message: str, default, value_type=str):
     if sys.stdin.isatty():
-        return click.prompt(message, default=default, type=value_type, show_default=True)
+        return click.prompt(
+            message, default=default, type=value_type, show_default=True
+        )
     return default
 
 
@@ -117,7 +119,9 @@ def _collect_config(frontend_choice: str) -> dict:
     click.secho("\n[External HTTP]", fg="cyan")
     click.echo("  URL of the dev server used by the frontend (Vite, etc).")
     external_http_default = "http://localhost:5173"
-    external_http = str(_prompt_value("External frontend URL", external_http_default, str))
+    external_http = str(
+        _prompt_value("External frontend URL", external_http_default, str)
+    )
 
     click.secho("\n[Build]", fg="cyan")
     click.echo("  Backend bundling preferences for production.")

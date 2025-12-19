@@ -9,6 +9,7 @@ if TYPE_CHECKING:
 
 from .devui import DevUI
 
+
 class TauServer:
     """
     Internal WebSocket server used by TauPy to synchronize UI events
@@ -64,16 +65,14 @@ class TauServer:
                     await self.app.dispatcher.dispatch_click(data["id"])
                 elif event_type == "input":
                     await self.app.dispatcher.dispatch_input(
-                        data["id"],
-                        data.get("value", "")
+                        data["id"], data.get("value", "")
                     )
                 elif event_type == "window_cmd":
                     cmd = data.get("command") or data.get("payload") or {}
                     await self.app.send_window_command(cmd)
                 elif event_type == "window_event":
                     await self.app._handle_window_event(
-                        data.get("name"),
-                        data.get("payload", {})
+                        data.get("name"), data.get("payload", {})
                     )
 
         except Exception:
@@ -100,8 +99,7 @@ class TauServer:
         text = json.dumps(msg)
 
         await asyncio.gather(
-            *(ws.send(text) for ws in self.clients if ws.open),
-            return_exceptions=True
+            *(ws.send(text) for ws in self.clients if ws.open), return_exceptions=True
         )
 
     async def init_navigation(self) -> None:
@@ -111,6 +109,7 @@ class TauServer:
         Called automatically on each new WebSocket connection.
         """
         from taupy.app import AppMode
+
         if getattr(self.app, "mode", AppMode.GENERATE_HTML) != AppMode.GENERATE_HTML:
             return
         await self.app.navigate("/")

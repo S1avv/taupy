@@ -25,6 +25,7 @@ class AppMode(Enum):
     GENERATE_HTML = "generate"
     RAW_HTML = "raw"
 
+
 class App:
     """
     Core application controller for TauPy UI framework.
@@ -69,7 +70,9 @@ class App:
             frameless (bool): Remove native window frame (Rust launcher).
             transparent (bool): Make window background transparent (Rust launcher).
         """
-        self.root_module_name = sys.argv[0].replace(".py", "").replace("/", ".").replace("\\", ".")
+        self.root_module_name = (
+            sys.argv[0].replace(".py", "").replace("/", ".").replace("\\", ".")
+        )
         self.root_module_path = sys.argv[0]
 
         dev_flag = True if "--dev" in sys.argv else False
@@ -108,7 +111,9 @@ class App:
 
         self.dev = dev_flag
         self.no_window = "--no-window" in sys.argv
-        self.open_devtools = "--open-devtools" in sys.argv or os.getenv("TAUPY_OPEN_DEVTOOLS") == "1"
+        self.open_devtools = (
+            "--open-devtools" in sys.argv or os.getenv("TAUPY_OPEN_DEVTOOLS") == "1"
+        )
         self.frameless = frameless
         self.transparent = transparent
         self.always_on_top = always_on_top
@@ -122,10 +127,14 @@ class App:
         self.window_process = None
         self._reload_task = None
         self._window_watch_task = None
-        self._window_event_handlers: list[Callable[[str, dict], Awaitable[None] | None]] = []
+        self._window_event_handlers: list[
+            Callable[[str, dict], Awaitable[None] | None]
+        ] = []
         self._window_stdout_task = None
 
-    async def run(self, root_component: Optional[Component] = None, port: int = 8765) -> None:
+    async def run(
+        self, root_component: Optional[Component] = None, port: int = 8765
+    ) -> None:
         """
         Start the TauPy backend and launch the native window.
 
@@ -139,7 +148,9 @@ class App:
             root_component (Component): Root UI container that holds all screens.
         """
         if self.mode == AppMode.GENERATE_HTML and root_component is None:
-            raise ValueError("root_component is required when mode=AppMode.GENERATE_HTML")
+            raise ValueError(
+                "root_component is required when mode=AppMode.GENERATE_HTML"
+            )
 
         env_ws_port = os.getenv("TAUPY_WS_PORT")
         if env_ws_port and env_ws_port.isdigit():
@@ -160,7 +171,7 @@ class App:
                 await websockets.serve(self.server.handler, "localhost", port)
             else:
                 raise
-        
+
         if not self.no_window:
             if not self.external_http:
                 try:
@@ -170,7 +181,9 @@ class App:
             self._launch_window_process()
             if self.window_process:
                 self._window_watch_task = asyncio.create_task(self._watch_window_exit())
-                self._window_stdout_task = asyncio.create_task(self._consume_window_stdout())
+                self._window_stdout_task = asyncio.create_task(
+                    self._consume_window_stdout()
+                )
 
         if self.dev:
             if self.mode == AppMode.GENERATE_HTML:
@@ -186,7 +199,10 @@ class App:
         try:
             loop.add_signal_handler(signal.SIGINT, sigint_handler)
         except Exception:
-            signal.signal(signal.SIGINT, lambda *_: asyncio.run_coroutine_threadsafe(self.shutdown(), loop))
+            signal.signal(
+                signal.SIGINT,
+                lambda *_: asyncio.run_coroutine_threadsafe(self.shutdown(), loop),
+            )
 
         await asyncio.Future()
 
@@ -229,6 +245,7 @@ class App:
         """
 
         from inspect import isfunction
+
         component.app = self
 
         if isinstance(component, Text_) and isfunction(component.value):
@@ -249,8 +266,9 @@ class App:
 
             for st in states:
                 st.subscribe(
-                    lambda _v, cid=component.id, f=func:
-                        self._update_text_component(cid, f())
+                    lambda _v, cid=component.id, f=func: self._update_text_component(
+                        cid, f()
+                    )
                 )
 
         if isinstance(component, Button_):
@@ -262,6 +280,7 @@ class App:
 
         for child in component.children:
             self._bind_events_and_states(child)
+
     def _update_text_component(self, component_id: str, new_value: Any) -> None:
         """
         Send a WebSocket message updating a reactive <Text> component.
@@ -445,9 +464,15 @@ class App:
                 await self._reload_task
             except Exception:
                 pass
-        if self._window_watch_task and self._window_watch_task is not asyncio.current_task():
+        if (
+            self._window_watch_task
+            and self._window_watch_task is not asyncio.current_task()
+        ):
             self._window_watch_task.cancel()
-        if self._window_stdout_task and self._window_stdout_task is not asyncio.current_task():
+        if (
+            self._window_stdout_task
+            and self._window_stdout_task is not asyncio.current_task()
+        ):
             self._window_stdout_task.cancel()
 
         try:
@@ -472,11 +497,9 @@ class App:
         os._exit(0)
 
     async def update_component(self, component_id: str, new_html: str):
-        await self.server.broadcast({
-            "type": "update_html",
-            "id": component_id,
-            "html": new_html
-        })
+        await self.server.broadcast(
+            {"type": "update_html", "id": component_id, "html": new_html}
+        )
 
     async def send_window_command(self, command: dict):
         """
@@ -506,10 +529,7 @@ class App:
             except Exception:
                 pass
 
-        await self.server.broadcast({
-            "type": "window_cmd",
-            "command": command
-        })
+        await self.server.broadcast({"type": "window_cmd", "command": command})
 
     async def _handle_window_event(self, name: str | None, payload: dict):
         if not name:

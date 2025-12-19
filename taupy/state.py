@@ -65,7 +65,7 @@ class State:
         try:
             self._subscribers.remove(callback)
         except ValueError:
-            pass 
+            pass
 
     def _notify_subscribers(self) -> None:
         """

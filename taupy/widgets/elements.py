@@ -5,6 +5,7 @@ import shutil
 import os
 import asyncio
 
+
 def _normalize_props(props: dict[str, Any]) -> dict[str, Any]:
     """Convert class_ → class and drop Nones."""
     out = {}
@@ -31,6 +32,7 @@ def _props_to_str(props: dict[str, Any]) -> str:
 
     return " ".join(out)
 
+
 class Modal_(Component):
     """
     DaisyUI modal. Controlled via State[bool].
@@ -44,7 +46,7 @@ class Modal_(Component):
         title: Optional[str] = None,
         content: Optional[List[Component]] = None,
         actions: Optional[List[Component]] = None,
-        **props
+        **props,
     ):
         super().__init__(id=id, **props)
 
@@ -68,8 +70,7 @@ class Modal_(Component):
         actions_html = "".join(c.render() for c in self.actions)
 
         title_html = (
-            f'<h3 class="text-lg font-bold">{self.title}</h3>'
-            if self.title else ""
+            f'<h3 class="text-lg font-bold">{self.title}</h3>' if self.title else ""
         )
 
         return f"""
@@ -89,6 +90,7 @@ class Modal_(Component):
 </div>
 """
 
+
 class Div_(Component):
     def render(self) -> str:
         props_str = _props_to_str(self.props)
@@ -100,7 +102,6 @@ class Button_(Component):
     def __init__(self, text: str, **props):
         super().__init__(**props)
         self.text = text
-        
 
     def render(self) -> str:
         props_str = _props_to_str(self.props)
@@ -136,9 +137,7 @@ class Text_(Component):
         text = self.value() if callable(self.value) else self.value
         props_str = _props_to_str(self.props)
 
-        return (
-            f'<span id="{self.id}" {props_str} data-component-id="{self.id}">{text}</span>'
-        )
+        return f'<span id="{self.id}" {props_str} data-component-id="{self.id}">{text}</span>'
 
 
 class Table_(Component):
@@ -164,10 +163,10 @@ class Table_(Component):
         return (
             f'<div class="overflow-x-auto">'
             f'  <table id="{self.id}" {props_str} class="table" data-component-id="{self.id}">'
-            f'    {thead}'
-            f'    {tbody}'
-            f'  </table>'
-            f'</div>'
+            f"    {thead}"
+            f"    {tbody}"
+            f"  </table>"
+            f"</div>"
         )
 
 
@@ -190,10 +189,7 @@ class Image_(Component):
     def render(self) -> str:
         props_str = _props_to_str(self.props)
 
-        attrs = [
-            f'src="{self.src}"',
-            f'alt="{self.alt}"'
-        ]
+        attrs = [f'src="{self.src}"', f'alt="{self.alt}"']
         if self.width:
             attrs.append(f'width="{self.width}"')
         if self.height:
@@ -209,20 +205,26 @@ class Image_(Component):
 def Div(*children, style: str | None = None, **props):
     return Div_(children=list(children), style=style, **props)
 
+
 def Button(text: str, style: str | None = None, **props):
     return Button_(text, style=style, **props)
+
 
 def Text(value, style: str | None = None, **props):
     return Text_(value, style=style, **props)
 
+
 def Input(value="", placeholder="", style: str | None = None, **props):
     return Input_(value, placeholder=placeholder, style=style, **props)
+
 
 def Table(head=None, rows=None, style: str | None = None, **props):
     return Table_(head=head, rows=rows, style=style, **props)
 
+
 def Image(src, style: str | None = None, **props):
     return Image_(src, style=style, **props)
+
 
 def Modal(open_state, style: str | None = None, **props):
     return Modal_(open_state=open_state, style=style, **props)

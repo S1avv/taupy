@@ -40,7 +40,10 @@ def _copy_if_exists(src: str, dst_dir: str) -> None:
 
 def _copy_dist_folder(dist_src: str, dist_dst: str) -> None:
     if not os.path.exists(dist_src):
-        click.secho(f"{ICON_WARN} dist folder not found at {dist_src}; skipping static copy.", fg="yellow")
+        click.secho(
+            f"{ICON_WARN} dist folder not found at {dist_src}; skipping static copy.",
+            fg="yellow",
+        )
         return
     shutil.copytree(dist_src, dist_dst, dirs_exist_ok=True)
 
@@ -77,10 +80,17 @@ def build():
     frontend_cfg = config.get("frontend", {}) if isinstance(config, dict) else {}
     modules_cfg = build_cfg.get("modules", {}) if isinstance(build_cfg, dict) else {}
     extra_modules = [name for name, enabled in modules_cfg.items() if enabled]
-    frontend_type = (frontend_cfg.get("type") or "").lower() if isinstance(frontend_cfg, dict) else ""
+    frontend_type = (
+        (frontend_cfg.get("type") or "").lower()
+        if isinstance(frontend_cfg, dict)
+        else ""
+    )
 
     if not os.path.exists(main_py):
-        click.secho(f"{ICON_ERR} main.py not found in {cwd}. Run from your project root.", fg="red")
+        click.secho(
+            f"{ICON_ERR} main.py not found in {cwd}. Run from your project root.",
+            fg="red",
+        )
         sys.exit(1)
 
     click.secho(f"{ICON_INFO} Preparing build output...", fg="cyan")
@@ -91,8 +101,12 @@ def build():
     if os.path.exists(onefile_build_dir):
         shutil.rmtree(onefile_build_dir, ignore_errors=True)
 
-    click.secho(f"{ICON_INFO} Using prebuilt Rust launcher (no cargo build)...", fg="cyan")
-    click.secho(f"{ICON_INFO} Copying WebView2 loader and runtime into launcher/...", fg="cyan")
+    click.secho(
+        f"{ICON_INFO} Using prebuilt Rust launcher (no cargo build)...", fg="cyan"
+    )
+    click.secho(
+        f"{ICON_INFO} Copying WebView2 loader and runtime into launcher/...", fg="cyan"
+    )
     dll_candidates = [
         os.path.join(cwd, "launcher", "WebView2Loader.dll"),
         DLL_FILE,
@@ -123,9 +137,13 @@ def build():
                 if os.path.exists(dist_src):
                     shutil.copytree(dist_src, dist_dst, dirs_exist_ok=True)
             except subprocess.CalledProcessError as exc:
-                click.secho(f"{ICON_ERR} npm build failed ({exc.returncode}).", fg="red")
+                click.secho(
+                    f"{ICON_ERR} npm build failed ({exc.returncode}).", fg="red"
+                )
         else:
-            click.secho(f"{ICON_WARN} npm not found; skipping frontend build.", fg="yellow")
+            click.secho(
+                f"{ICON_WARN} npm not found; skipping frontend build.", fg="yellow"
+            )
     else:
         dist_dst = os.path.join(target_dir, "dist")
         _copy_dist_folder(dist_src, dist_dst)
@@ -133,12 +151,18 @@ def build():
     try:
         import websockets  # noqa: F401
     except ImportError:
-        click.secho(f"{ICON_ERR} Missing dependency 'websockets'. Install it before building (pip install websockets).", fg="red")
+        click.secho(
+            f"{ICON_ERR} Missing dependency 'websockets'. Install it before building (pip install websockets).",
+            fg="red",
+        )
         sys.exit(1)
 
     nuitka_bin = shutil.which("nuitka") or shutil.which("nuitka3")
     if not nuitka_bin:
-        click.secho(f"{ICON_ERR} Nuitka not found. Install with `pip install nuitka` to bundle backend.", fg="red")
+        click.secho(
+            f"{ICON_ERR} Nuitka not found. Install with `pip install nuitka` to bundle backend.",
+            fg="red",
+        )
         sys.exit(1)
 
     click.secho(f"{ICON_INFO} Bundling Python backend with Nuitka...", fg="cyan")
@@ -160,13 +184,18 @@ def build():
         main_py,
     ]
     if extra_modules:
-        click.secho(f"{ICON_INFO} Including extra modules: {', '.join(extra_modules)}", fg="cyan")
+        click.secho(
+            f"{ICON_INFO} Including extra modules: {', '.join(extra_modules)}",
+            fg="cyan",
+        )
         for mod in extra_modules:
             cmd.append(f"--include-module={mod}")
     if sys.platform == "win32":
-        cmd.extend([
-            "--windows-console-mode=disable",
-        ])
+        cmd.extend(
+            [
+                "--windows-console-mode=disable",
+            ]
+        )
     try:
         subprocess.check_call(cmd)
 
@@ -181,4 +210,6 @@ def build():
         if os.path.exists(maybe_dir):
             shutil.rmtree(maybe_dir, ignore_errors=True)
 
-    click.secho(f"{ICON_OK} Done. Artifacts are in: {target_dir}", fg="green", bold=True)
+    click.secho(
+        f"{ICON_OK} Done. Artifacts are in: {target_dir}", fg="green", bold=True
+    )

@@ -33,7 +33,9 @@ def dev():
         if has_frontend:
             npm_bin = shutil.which("npm") or shutil.which("npm.cmd")
             if not npm_bin:
-                click.secho("npm не найден в PATH, пропускаю запуск фронтенда", fg="yellow")
+                click.secho(
+                    "npm не найден в PATH, пропускаю запуск фронтенда", fg="yellow"
+                )
             else:
                 try:
                     free_port(int(dev_port))

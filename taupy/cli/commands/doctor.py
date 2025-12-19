@@ -80,14 +80,27 @@ def _check_webview2():
 
     # Fallback: check default install directories
     candidates = [
-        os.path.join(os.environ.get("ProgramFiles(x86)", ""), "Microsoft", "EdgeWebView", "Application"),
-        os.path.join(os.environ.get("ProgramFiles", ""), "Microsoft", "EdgeWebView", "Application"),
+        os.path.join(
+            os.environ.get("ProgramFiles(x86)", ""),
+            "Microsoft",
+            "EdgeWebView",
+            "Application",
+        ),
+        os.path.join(
+            os.environ.get("ProgramFiles", ""),
+            "Microsoft",
+            "EdgeWebView",
+            "Application",
+        ),
     ]
     for path in candidates:
         if path.strip() and os.path.exists(path):
             return True, f"WebView2 runtime found at {path}"
 
-    return False, "WebView2 runtime not detected. Install: https://go.microsoft.com/fwlink/p/?LinkId=2124703"
+    return (
+        False,
+        "WebView2 runtime not detected. Install: https://go.microsoft.com/fwlink/p/?LinkId=2124703",
+    )
 
 
 def _check_nuitka():
@@ -122,4 +135,7 @@ def doctor():
     for name, ok, detail in checks:
         click.echo(f"{_status(ok)} {name} - {detail}")
 
-    _maybe_warn(not os.access(os.getcwd(), os.W_OK), "Current directory is not writable; builds may fail.")
+    _maybe_warn(
+        not os.access(os.getcwd(), os.W_OK),
+        "Current directory is not writable; builds may fail.",
+    )
