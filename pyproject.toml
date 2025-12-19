@@ -17,7 +17,7 @@ pytest = "9.0.0"
 nuitka = "^2.8.6"
 requests = "^2.32.5"
 watchfiles = "^1.1.1"
-psutil = "^6.0"
+psutil = ">=5.9,<6.0"
 
 [tool.poetry.scripts]
 taupy = "taupy.cli.main:main"
