@@ -4,7 +4,6 @@ import signal
 import json
 import asyncio
 import os
-import pathlib
 import sys
 import subprocess
 from typing import Any, Awaitable, Callable, Optional
@@ -13,15 +12,13 @@ from enum import Enum
 import websockets
 
 from .dispatcher import Dispatcher
-from .devui import DevUI
 from .router import Router
 from .widgets.component import Component
 from .widgets.elements import Button_, Text_, Input_
-from .events.events import Resize
 from .state import State
 from .server import TauServer
 
-from .reloader import start_hot_reload, start_static_reload, free_port, clear_console
+from .reloader import start_hot_reload, start_static_reload, free_port
 
 
 class AppMode(Enum):
@@ -188,7 +185,7 @@ class App:
 
         try:
             loop.add_signal_handler(signal.SIGINT, sigint_handler)
-        except:
+        except Exception:
             signal.signal(signal.SIGINT, lambda *_: asyncio.run_coroutine_threadsafe(self.shutdown(), loop))
 
         await asyncio.Future()
@@ -446,7 +443,7 @@ class App:
             self._reload_task.cancel()
             try:
                 await self._reload_task
-            except:
+            except Exception:
                 pass
         if self._window_watch_task and self._window_watch_task is not asyncio.current_task():
             self._window_watch_task.cancel()
@@ -455,20 +452,20 @@ class App:
 
         try:
             await self.server.stop()
-        except:
+        except Exception:
             pass
 
         if self.window_process:
             try:
                 self.window_process.terminate()
-            except:
+            except Exception:
                 pass
 
             free_port(self.ws_port)
 
             try:
                 self.window_process.wait(timeout=2)
-            except:
+            except Exception:
                 self.window_process.kill()
 
         print("Stopped.")

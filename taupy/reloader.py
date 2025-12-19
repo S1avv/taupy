@@ -99,24 +99,24 @@ async def start_hot_reload(app) -> None:
         except Exception as e:
             err = "".join(traceback.format_exception(e))
             print("[HMR] Syntax error:\n", err)
-            await app.server.broadcast({
-                "type": "hmr_error",
-                "message": err
-            })
-            continue
+        await app.server.broadcast({
+            "type": "hmr_error",
+            "message": err
+        })
+        continue
 
-        await app.hot_reload_broadcast("hot_reload")
+    await app.hot_reload_broadcast("hot_reload")
 
+    try:
+        await app.server.stop()
+    except Exception:
+        pass
+
+    if app.window_process:
         try:
-            await app.server.stop()
-        except:
+            app.window_process.terminate()
+        except Exception:
             pass
-
-        if app.window_process:
-            try:
-                app.window_process.terminate()
-            except:
-                pass
 
         print("[HMR] Soft restarting...")
 

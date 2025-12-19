@@ -1,5 +1,4 @@
 import uuid
-import asyncio
 
 class Component:
     _id_counter = 0

@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import Any, Callable, List, Optional
+from typing import Any, List, Optional
 from .component import Component
 import shutil
 import os
@@ -194,8 +194,10 @@ class Image_(Component):
             f'src="{self.src}"',
             f'alt="{self.alt}"'
         ]
-        if self.width: attrs.append(f'width="{self.width}"')
-        if self.height: attrs.append(f'height="{self.height}"')
+        if self.width:
+            attrs.append(f'width="{self.width}"')
+        if self.height:
+            attrs.append(f'height="{self.height}"')
 
         attrs = " ".join(attrs)
 

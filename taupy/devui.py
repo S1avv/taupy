@@ -1,10 +1,8 @@
 from colorama import Fore, Style, init
 from .reloader import clear_console
 
-import platform
 import os
 import sys
-import psutil
 
 init(autoreset=True)
 
