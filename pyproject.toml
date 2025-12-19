@@ -17,7 +17,10 @@ pytest = "9.0.0"
 nuitka = "^2.8.6"
 requests = "^2.32.5"
 watchfiles = "^1.1.1"
-psutil = "==5.9.8"
+psutil = { version = ">=5.9.8,<7.0", optional = true }
+
+[tool.poetry.extras]
+system = ["psutil"]
 
 [tool.poetry.scripts]
 taupy = "taupy.cli.main:main"
