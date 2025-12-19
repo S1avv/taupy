@@ -19,6 +19,12 @@ requests = "^2.32.5"
 watchfiles = "^1.1.1"
 psutil = { version = ">=5.9.8,<7.0", optional = true }
 
+[tool.poetry.group.dev.dependencies]
+ruff = "^0.6.8"
+mypy = "^1.11.2"
+mkdocs = "^1.6.1"
+mkdocs-material = "^9.5.36"
+
 [tool.poetry.extras]
 system = ["psutil"]
 
