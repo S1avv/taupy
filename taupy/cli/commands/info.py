@@ -64,8 +64,8 @@ def _detect_frontend(cwd: str, cfg: dict) -> str:
     return f"{base.capitalize()}{suffix}"
 
 
-def _detect_launcher(cwd: str) -> str:
-    exe = Path(cwd) / "launcher" / "taupy.exe"
+def _detect_engine(cwd: str) -> str:
+    exe = Path(cwd) / "Engine" / "taupy.exe"
     return "rust/release" if exe.exists() else "missing"
 
 
@@ -86,11 +86,11 @@ def info():
     os_str = f"{platform.system()} {platform.release()}"
     webview_ver = _detect_webview2_version() or "not detected"
     frontend = _detect_frontend(cwd, cfg)
-    launcher = _detect_launcher(cwd)
+    engine = _detect_engine(cwd)
 
     click.echo(f"TauPy v{taupy_ver}")
     click.echo(f"Python {py_ver}")
     click.echo(f"OS: {os_str}")
     click.echo(f"WebView: WebView2 {webview_ver}")
     click.echo(f"Frontend: {frontend}")
-    click.echo(f"Launcher: {launcher}")
+    click.echo(f"Lake Engine: {engine}")

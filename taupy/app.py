@@ -6,6 +6,8 @@ import asyncio
 import os
 import sys
 import subprocess
+import ctypes
+import threading
 from typing import Any, Awaitable, Callable, Optional
 from enum import Enum
 from types import CellType
@@ -20,6 +22,7 @@ from .state import State
 from .server import TauServer
 
 from .reloader import start_hot_reload, start_static_reload, free_port
+import shutil
 
 
 class AppMode(Enum):
@@ -31,7 +34,7 @@ class App:
     """
     Core application controller for TauPy UI framework.
 
-    The `App` class manages:
+    The App class manages:
       • Rendering and saving the initial HTML layout
       • Running the WebSocket server
       • Injecting UI components
@@ -68,8 +71,8 @@ class App:
             height (int): Window height in pixels.
             theme (str): DaisyUI theme name.
             mode (AppMode): GENERATE_HTML renders to dist/, RAW_HTML reuses existing dist/.
-            frameless (bool): Remove native window frame (Rust launcher).
-            transparent (bool): Make window background transparent (Rust launcher).
+            frameless (bool): Remove native window frame (Lake Engine).
+            transparent (bool): Make window background transparent (Lake Engine).
         """
         self.root_module_name = (
             sys.argv[0].replace(".py", "").replace("/", ".").replace("\\", ".")
@@ -178,6 +181,9 @@ class App:
                     free_port(self.http_port)
                 except Exception:
                     pass
+            if self.mode == AppMode.RAW_HTML and not self.external_http:
+                dist_dir = os.path.join(os.path.dirname(self.root_module_path), "dist")
+                self._ensure_client_js(dist_dir)
             self._launch_window_process()
             if self.window_process:
                 self._window_watch_task = asyncio.create_task(self._watch_window_exit())
@@ -230,11 +236,16 @@ class App:
             title=self.title, theme=self.theme, body=rendered_body
         )
 
-        os.makedirs("dist", exist_ok=True)
-        os.makedirs("dist/public", exist_ok=True)
+        dist_dir = os.path.join(os.getcwd(), "dist")
+        public_dir = os.path.join(dist_dir, "public")
 
-        with open("dist/index.html", "w", encoding="utf-8") as f:
+        os.makedirs(dist_dir, exist_ok=True)
+        os.makedirs(public_dir, exist_ok=True)
+
+        with open(os.path.join(dist_dir, "index.html"), "w", encoding="utf-8") as f:
             f.write(full_html)
+
+        self._ensure_client_js(dist_dir)
 
         self._bind_events_and_states(component)
 
@@ -280,6 +291,16 @@ class App:
 
         for child in component.children:
             self._bind_events_and_states(child)
+
+    def _ensure_client_js(self, dist_dir: str) -> None:
+        base_dir = os.path.dirname(os.path.abspath(__file__))
+        utils_client = os.path.join(base_dir, "utils", "client.js")
+        if not os.path.exists(utils_client):
+            return
+        os.makedirs(dist_dir, exist_ok=True)
+        target = os.path.join(dist_dir, "client.js")
+        if not os.path.exists(target):
+            shutil.copy(utils_client, target)
 
     def _update_text_component(self, component_id: str, new_value: Any) -> None:
         """
@@ -365,58 +386,114 @@ class App:
         await self.server.broadcast({"type": "set_theme", "theme": theme})
 
     def _launch_window_process(self) -> None:
-        """
-        Spawn the native Rust WebView window process.
+        base_dir = os.path.dirname(os.path.abspath(__file__))
+        launcher_override = os.getenv("TAUPY_LAUNCHER_PATH")
+        if launcher_override:
+            launcher_path = launcher_override
+        else:
+            launcher_path = os.path.join(base_dir, "utils", "taupy.exe")
 
-        Expected executable location:
-            launcher/taupy.exe
-        """
-        exe_path = os.path.join(os.getcwd(), "launcher", "taupy.exe")
+        if os.name == "nt" and os.path.exists(launcher_path):
+            project_dir = os.path.dirname(self.root_module_path)
 
-        if not os.path.exists(exe_path):
-            raise FileNotFoundError(f"Main launcher missing at: {exe_path}")
+            args: list[str] = [
+                launcher_path,
+                "--title",
+                self.title,
+                "--port",
+                str(self.http_port),
+                "--width",
+                str(self.width),
+                "--height",
+                str(self.height),
+            ]
 
-        args = [
-            exe_path,
-            f"--title={self.title}",
-            f"--width={self.width}",
-            f"--height={self.height}",
-            f"--port={self.http_port}",
-        ]
+            if self.external_http:
+                args.append("--external")
+            if self.frameless:
+                args.append("--frameless")
+            if self.transparent:
+                args.append("--transparent")
+            if self.always_on_top:
+                args.append("--always-on-top")
+            if not self.resizable:
+                args.extend(["--resizable", "false"])
+            if self.min_width is not None:
+                args.extend(["--min-width", str(self.min_width)])
+            if self.min_height is not None:
+                args.extend(["--min-height", str(self.min_height)])
+            if self.max_width is not None:
+                args.extend(["--max-width", str(self.max_width)])
+            if self.max_height is not None:
+                args.extend(["--max-height", str(self.max_height)])
+            if self.open_devtools:
+                args.append("--open-devtools")
 
-        if self.external_http:
-            args.append("--external")
-        if self.frameless:
-            args.append("--frameless")
-        if self.transparent:
-            args.append("--transparent")
-        if self.always_on_top:
-            args.append("--always-on-top")
-        if not self.resizable:
-            args.append("--resizable=false")
-        if self.open_devtools:
-            args.append("--open-devtools")
+            self.window_process = subprocess.Popen(
+                args,
+                cwd=project_dir,
+                stdin=subprocess.PIPE,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+                text=True,
+            )
+            return
+
+        dll_override = os.getenv("TAUPY_WINDOW_DLL")
+        if dll_override:
+            dll_path = dll_override
+        else:
+            if sys.platform == "win32":
+                dll_name = "LakeEngine.dll"
+            elif sys.platform == "darwin":
+                dll_name = "libLakeEngine.dylib"
+            else:
+                dll_name = "libLakeEngine.so"
+            dll_path = os.path.join(
+                base_dir,
+                "modules",
+                "window",
+                "target",
+                "release",
+                dll_name,
+            )
+
+        if not os.path.exists(dll_path):
+            raise FileNotFoundError(f"Window runtime library missing at: {dll_path}")
+
+        os.environ["TAUPY_WINDOW_TITLE"] = self.title
+        os.environ["TAUPY_WINDOW_PORT"] = str(self.http_port)
+        os.environ["TAUPY_WINDOW_WIDTH"] = str(self.width)
+        os.environ["TAUPY_WINDOW_HEIGHT"] = str(self.height)
+        os.environ["TAUPY_WINDOW_EXTERNAL"] = "1" if self.external_http else "0"
+        os.environ["TAUPY_WINDOW_FRAMELESS"] = "1" if self.frameless else "0"
+        os.environ["TAUPY_WINDOW_TRANSPARENT"] = "1" if self.transparent else "0"
+        os.environ["TAUPY_WINDOW_ALWAYS_ON_TOP"] = "1" if self.always_on_top else "0"
+        os.environ["TAUPY_WINDOW_RESIZABLE"] = "1" if self.resizable else "0"
         if self.min_width is not None:
-            args.append(f"--min-width={self.min_width}")
+            os.environ["TAUPY_WINDOW_MIN_WIDTH"] = str(self.min_width)
         if self.min_height is not None:
-            args.append(f"--min-height={self.min_height}")
+            os.environ["TAUPY_WINDOW_MIN_HEIGHT"] = str(self.min_height)
         if self.max_width is not None:
-            args.append(f"--max-width={self.max_width}")
+            os.environ["TAUPY_WINDOW_MAX_WIDTH"] = str(self.max_width)
         if self.max_height is not None:
-            args.append(f"--max-height={self.max_height}")
+            os.environ["TAUPY_WINDOW_MAX_HEIGHT"] = str(self.max_height)
+        os.environ["TAUPY_WINDOW_OPEN_DEVTOOLS"] = "1" if self.open_devtools else "0"
 
-        creation_flags = 0
-        if os.name == "nt":
-            creation_flags = getattr(subprocess, "CREATE_NO_WINDOW", 0)
+        if sys.platform == "win32":
+            dll = ctypes.WinDLL(dll_path)
+        else:
+            dll = ctypes.CDLL(dll_path)
 
-        self.window_process = subprocess.Popen(
-            args,
-            creationflags=creation_flags,
-            stdin=subprocess.PIPE,
-            stdout=subprocess.PIPE,
-            text=True,
-            bufsize=1,
-        )
+        try:
+            entry = dll.LakeEngineRun
+        except AttributeError as exc:
+            raise RuntimeError("LakeEngineRun symbol not found in DLL") from exc
+
+        entry.restype = None
+
+        thread = threading.Thread(target=entry, daemon=True)
+        thread.start()
 
     async def _watch_window_exit(self) -> None:
         """Shut down backend when the native window is closed."""
@@ -505,7 +582,7 @@ class App:
 
     async def send_window_command(self, command: dict):
         """
-        Send a window command to the native launcher via the WebView IPC bridge.
+        Send a window command to the Lake Engine via the WebView IPC bridge.
         Supported commands (dict form):
             - {"type": "minimize"}
             - {"type": "maximize"}
@@ -543,7 +620,7 @@ class App:
 
     async def _consume_window_stdout(self):
         """
-        Read JSON lines from the launcher stdout and forward as window events.
+        Read JSON lines from the Lake Engine stdout and forward as window events.
         """
         if not self.window_process or not self.window_process.stdout:
             return

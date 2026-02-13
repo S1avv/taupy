@@ -8,12 +8,9 @@ import sys
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 UTILS_DIR = os.path.join(BASE_DIR, "utils")
-TEMPLATE_PY = os.path.join(UTILS_DIR, "template.py")
 TEMPLATE_REACT = os.path.join(UTILS_DIR, "template_react.py")
 TEMPLATE_VANILLA = os.path.join(UTILS_DIR, "template_vanilla.py")
-DLL_FILE = os.path.join(UTILS_DIR, "WebView2Loader.dll")
-CLIENTJS = os.path.join(UTILS_DIR, "client.js")
-TAUPY_EXE = os.path.join(UTILS_DIR, "taupy.exe")
+TEMPLATE_PYTHON = os.path.join(UTILS_DIR, "template.py")
 VITE_TEMPLATE_DIR = os.path.join(BASE_DIR, "templates", "vite-react")
 VANILLA_TEMPLATE_DIR = os.path.join(BASE_DIR, "templates", "vanilla")
 
@@ -164,7 +161,7 @@ def _write_taupy_config(project_path: str, cfg: dict) -> None:
     "-f",
     type=click.Choice(["react", "vanilla", "python"], case_sensitive=False),
     default=None,
-    help="Choose UI template: react (Vite), vanilla (HTML/CSS/JS), or python (TauPy widgets).",
+    help="Choose UI template: react (Vite), vanilla (HTML/CSS/JS), or python (TauPy components).",
 )
 def new(name, frontend):
     project_path = os.path.abspath(name)
@@ -181,11 +178,6 @@ def new(name, frontend):
     frontend = config_answers["frontend_type"]
 
     os.makedirs(project_path)
-    launcher_dir = os.path.join(project_path, "launcher")
-    os.makedirs(launcher_dir)
-
-    dist_dir = os.path.join(project_path, "dist")
-    os.makedirs(dist_dir)
 
     if not frontend:
         frontend = click.prompt(
@@ -200,24 +192,9 @@ def new(name, frontend):
     elif frontend == "vanilla":
         template_file = TEMPLATE_VANILLA
     else:
-        template_file = TEMPLATE_PY
+        template_file = TEMPLATE_PYTHON
     try:
         shutil.copy(template_file, os.path.join(project_path, "main.py"))
-    except FileNotFoundError:
-        pass
-
-    try:
-        shutil.copy(DLL_FILE, os.path.join(launcher_dir, "WebView2Loader.dll"))
-    except FileNotFoundError:
-        pass
-
-    try:
-        shutil.copy(CLIENTJS, os.path.join(dist_dir, "client.js"))
-    except FileNotFoundError:
-        pass
-
-    try:
-        shutil.copy(TAUPY_EXE, os.path.join(launcher_dir, "taupy.exe"))
     except FileNotFoundError:
         pass
 
@@ -250,7 +227,11 @@ def new(name, frontend):
     click.secho(f"  cd {name}", fg="yellow")
     if frontend == "react":
         click.secho("  npm install", fg="yellow")
-    click.secho("  taupy dev", fg="yellow")
+    click.secho("  taupy run", fg="yellow")
+    if frontend == "python":
+        click.echo()
+        click.secho("  UI is built with Python components (VStack, Text, Button, etc.)", fg="cyan")
+        click.secho("  No npm or frontend build needed!", fg="cyan")
 
     click.echo()
     click.secho("Happy coding with TauPy!", fg="magenta")

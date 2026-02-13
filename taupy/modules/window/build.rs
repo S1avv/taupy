@@ -40,13 +40,17 @@ fn main() {
             candidate.exists().then_some(candidate)
         })
         .or_else(|| {
-            println!("cargo:warning=WebView2Loader.dll not found in build artifacts, using prebuilt version.");
-            let utils_dir = PathBuf::from(env::var("CARGO_MANIFEST_DIR").unwrap()).join("..").join("utils");
+            println!("cargo:warning=WebView2Loader.dll not found in build artifacts, trying prebuilt version.");
+            let manifest_dir = PathBuf::from(env::var("CARGO_MANIFEST_DIR").unwrap());
+            let utils_dir = manifest_dir.join("..").join("..").join("utils");
             let preb = utils_dir.join("WebView2Loader.dll");
             preb.exists().then_some(preb)
-        })
-        .expect("WebView2Loader.dll not found in build artifacts or utils folder");
+        });
 
-    let dest = profile_dir.join("WebView2Loader.dll");
-    let _ = fs::copy(&loader, &dest);
+    if let Some(loader) = loader {
+        let dest = profile_dir.join("WebView2Loader.dll");
+        let _ = fs::copy(&loader, &dest);
+    } else {
+        println!("cargo:warning=WebView2Loader.dll not found; skipping copy.");
+    }
 }

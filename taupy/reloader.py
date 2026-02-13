@@ -6,19 +6,19 @@ import platform
 import os
 import sys
 import subprocess
-from watchfiles import awatch, DefaultFilter
+from typing import Callable, Dict, Iterable, List, Optional, Tuple
 
 
-class TauFilter(DefaultFilter):
+class TauFilter:
     def __call__(self, change, path: str) -> bool:
         p = path.replace("\\", "/")
 
         if p.startswith("dist/") or "/dist/" in p:
             return False
-        if p.startswith("launcher/") or "/launcher/" in p:
+        if p.startswith("Engine/") or "/Engine/" in p:
             return False
 
-        return super().__call__(change, path)
+        return True
 
 
 _last_reload: float = 0.0
@@ -27,9 +27,6 @@ _last_reload: float = 0.0
 def clear_console():
     """
     Clear the console if we are attached to one.
-
-    In GUI builds on Windows there is no attached console; calling `cls`
-    would spawn a transient `cmd.exe` window. We skip clearing in that case.
     """
     stdout_attached = hasattr(sys.stdout, "isatty") and sys.stdout.isatty()
     stderr_attached = hasattr(sys.stderr, "isatty") and sys.stderr.isatty()
@@ -88,7 +85,7 @@ async def start_hot_reload(app) -> None:
 
     await asyncio.sleep(0.4)
 
-    async for changes in awatch(".", watch_filter=TauFilter()):
+    async for changes in _poll_changes(".", TauFilter()):
         now = time.time()
         if now - _last_reload < 0.4:
             continue
@@ -105,31 +102,31 @@ async def start_hot_reload(app) -> None:
         except Exception as e:
             err = "".join(traceback.format_exception(e))
             print("[HMR] Syntax error:\n", err)
-        await app.server.broadcast({"type": "hmr_error", "message": err})
-        continue
+            await app.server.broadcast({"type": "hmr_error", "message": err})
+            continue
 
-    await app.hot_reload_broadcast("hot_reload")
+        await app.hot_reload_broadcast("hot_reload")
 
-    try:
-        await app.server.stop()
-    except Exception:
-        pass
-
-    if app.window_process:
         try:
-            app.window_process.terminate()
+            await app.server.stop()
         except Exception:
             pass
 
-        print("[HMR] Soft restarting...")
+        if app.window_process:
+            try:
+                app.window_process.terminate()
+            except Exception:
+                pass
 
-        module = importlib.import_module(app.root_module_name)
-        importlib.reload(module)
+            print("[HMR] Soft restarting...")
 
-        if hasattr(module, "main"):
-            asyncio.create_task(module.main())
-        else:
-            print(f"[HMR] ERROR: main() not found in {app.root_module_name}")
+            module = importlib.import_module(app.root_module_name)
+            importlib.reload(module)
+
+            if hasattr(module, "main"):
+                asyncio.create_task(module.main())
+            else:
+                print(f"[HMR] ERROR: main() not found in {app.root_module_name}")
 
 
 async def start_static_reload(app, watch_dir: str = "dist") -> None:
@@ -143,10 +140,58 @@ async def start_static_reload(app, watch_dir: str = "dist") -> None:
 
     await asyncio.sleep(0.4)
 
-    async for changes in awatch(watch_dir):
+    async for changes in _poll_changes(watch_dir, None):
         now = time.time()
         if now - _last_reload < 0.3:
             continue
         _last_reload = now
         print("[HMR] Static changes detected:", changes)
         await app.hot_reload_broadcast("hot_reload")
+
+
+async def _poll_changes(
+    root: str, watch_filter: Optional[Callable[[str, str], bool]] = None
+) -> Iterable[List[Tuple[str, str]]]:
+    """
+    Lightweight polling-based file watcher implemented with stdlib only.
+    Yields lists of (change_kind, path) tuples.
+    """
+    snapshot: Dict[str, float] = {}
+
+    def should_watch(path: str) -> bool:
+        if watch_filter is None:
+            return True
+        return bool(watch_filter("modified", path))
+
+    while True:
+        changes: List[Tuple[str, str]] = []
+
+        current: Dict[str, float] = {}
+        for dirpath, dirnames, filenames in os.walk(root):
+            for name in filenames:
+                full = os.path.join(dirpath, name)
+                rel = os.path.relpath(full, root).replace("\\", "/")
+                if not should_watch(rel):
+                    continue
+                try:
+                    mtime = os.path.getmtime(full)
+                except OSError:
+                    continue
+                current[rel] = mtime
+                old_mtime = snapshot.get(rel)
+                if old_mtime is None:
+                    changes.append(("created", rel))
+                elif mtime > old_mtime:
+                    changes.append(("modified", rel))
+
+        for path in snapshot:
+            if path not in current:
+                if should_watch(path):
+                    changes.append(("deleted", path))
+
+        snapshot = current
+
+        if changes:
+            yield changes
+
+        await asyncio.sleep(0.4)

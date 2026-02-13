@@ -13,10 +13,8 @@ ICON_ERR = "✖"
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 UTILS_DIR = os.path.join(BASE_DIR, "utils")
-WINDOW_DIR = os.path.join(BASE_DIR, "window")
-WINDOW_TARGET_DIR = os.path.join(WINDOW_DIR, "target", "release")
-DLL_FILE = os.path.join(UTILS_DIR, "WebView2Loader.dll")
-TAUPY_EXE = os.path.join(UTILS_DIR, "taupy.exe")
+WINDOW_MODULE_DIR = os.path.join(BASE_DIR, "modules", "window", "target", "release")
+WEBVIEW_DLL = os.path.join(UTILS_DIR, "WebView2Loader.dll")
 
 
 def _load_taupy_config(cwd: str) -> dict:
@@ -63,15 +61,22 @@ def _detect_frontend_dir(cwd: str) -> Optional[str]:
 @click.command()
 def build():
     """
-    Build TauPy app into ./target:
+    Build TauPy app into ./build/<platform>:
     - bundles Python backend via Nuitka (onefile)
     - builds React frontend (if present) into dist/
-    - copies WebView2 loader and taupy.exe runtime
-    - builds Rust launcher automatically (cargo build --release)
+    - copies window runtime library (and WebView2 loader on Windows)
+    - copies Lake Engine runtime into Engine/
     """
     cwd = os.getcwd()
-    target_dir = os.path.join(cwd, "target")
-    launcher_dir = os.path.join(target_dir, "launcher")
+    build_root = os.path.join(cwd, "build")
+    if sys.platform == "win32":
+        platform_name = "windows"
+    elif sys.platform == "darwin":
+        platform_name = "macos"
+    else:
+        platform_name = "linux"
+    target_dir = os.path.join(build_root, platform_name)
+    engine_dir = os.path.join(target_dir, "Engine")
     onefile_build_dir = os.path.join(target_dir, "main.onefile-build")
     frontend_dir = _detect_frontend_dir(cwd)
     main_py = os.path.join(cwd, "main.py")
@@ -97,31 +102,40 @@ def build():
     if os.path.exists(target_dir):
         shutil.rmtree(target_dir)
     os.makedirs(target_dir, exist_ok=True)
-    os.makedirs(launcher_dir, exist_ok=True)
+    os.makedirs(engine_dir, exist_ok=True)
     if os.path.exists(onefile_build_dir):
         shutil.rmtree(onefile_build_dir, ignore_errors=True)
 
     click.secho(
-        f"{ICON_INFO} Using prebuilt Rust launcher (no cargo build)...", fg="cyan"
+        f"{ICON_INFO} Using prebuilt Lake Engine runtime...", fg="cyan"
     )
     click.secho(
-        f"{ICON_INFO} Copying WebView2 loader and runtime into launcher/...", fg="cyan"
+        f"{ICON_INFO} Copying Lake Engine runtime into Engine/...", fg="cyan"
     )
-    dll_candidates = [
-        os.path.join(cwd, "launcher", "WebView2Loader.dll"),
-        DLL_FILE,
+
+    if sys.platform == "win32":
+        webview_candidates = [
+            os.path.join(cwd, "Engine", "WebView2Loader.dll"),
+            WEBVIEW_DLL,
+        ]
+        for cand in webview_candidates:
+            if os.path.exists(cand):
+                _copy_if_exists(cand, engine_dir)
+                break
+
+        runtime_name = "LakeEngine.dll"
+    elif sys.platform == "darwin":
+        runtime_name = "libLakeEngine.dylib"
+    else:
+        runtime_name = "libLakeEngine.so"
+
+    runtime_candidates = [
+        os.path.join(cwd, "Engine", runtime_name),
+        os.path.join(WINDOW_MODULE_DIR, runtime_name),
     ]
-    exe_candidates = [
-        os.path.join(cwd, "launcher", "taupy.exe"),
-        TAUPY_EXE,
-    ]
-    for cand in dll_candidates:
+    for cand in runtime_candidates:
         if os.path.exists(cand):
-            _copy_if_exists(cand, launcher_dir)
-            break
-    for cand in exe_candidates:
-        if os.path.exists(cand):
-            _copy_if_exists(cand, launcher_dir)
+            _copy_if_exists(cand, engine_dir)
             break
 
     dist_src = os.path.join(cwd, "dist")
@@ -183,6 +197,24 @@ def build():
         f"--jobs={jobs}",
         main_py,
     ]
+
+    base_html = os.path.join(BASE_DIR, "templates", "base.html")
+    if os.path.exists(base_html):
+        cmd.append(f"--include-data-files={base_html}=taupy/templates/base.html")
+    client_js = os.path.join(UTILS_DIR, "client.js")
+    if os.path.exists(client_js):
+        cmd.append(f"--include-data-files={client_js}=taupy/utils/client.js")
+
+    launcher_exe = os.path.join(UTILS_DIR, "taupy.exe")
+    if os.path.exists(launcher_exe):
+        cmd.append(f"--include-data-files={launcher_exe}=taupy/utils/taupy.exe")
+    if os.path.exists(WEBVIEW_DLL):
+        cmd.append(f"--include-data-files={WEBVIEW_DLL}=taupy/utils/WebView2Loader.dll")
+
+    window_dll = os.path.join(WINDOW_MODULE_DIR, "LakeEngine.dll" if sys.platform == "win32" else "libLakeEngine.dylib" if sys.platform == "darwin" else "libLakeEngine.so")
+    if os.path.exists(window_dll):
+        runtime_name = os.path.basename(window_dll)
+        cmd.append(f"--include-data-files={window_dll}=taupy/modules/window/target/release/{runtime_name}")
     if extra_modules:
         click.secho(
             f"{ICON_INFO} Including extra modules: {', '.join(extra_modules)}",
