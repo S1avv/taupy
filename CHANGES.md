@@ -1,8 +1,9 @@
 # Changelog
 
-## [0.0.4] - 2025-12-14
+## [0.0.6] - 2026-02-13
 
-- feat: added vanilla frontend template and new CLI commands (`config`, `doctor`, `info`).
-- docs: expanded guides for CLI commands, React integration, and the vanilla template.
-- refactor: reloader now watches static files in vanilla mode for live reload.
-- build: bumped wry to enable the devtools feature.
+- perf: faster window startup by loading `LakeEngine.dll` directly via ctypes instead of spawning a subprocess.
+- feat: full build pipeline support for all frontend modes (react, vanilla, python).
+- fix: Nuitka onefile build now bundles `base.html` and `client.js` for python frontend mode.
+- fix: Nuitka onefile build now bundles native binaries (`taupy.exe`, `WebView2Loader.dll`, `LakeEngine.dll`).
+- fix: Nuitka build respects the `onefile` setting from `taupy.toml`.

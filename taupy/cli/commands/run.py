@@ -80,7 +80,9 @@ def run():
                         vite_port = str(parsed.port)
                 if not vite_port:
                     dev_cfg = cfg.get("dev", {}) if isinstance(cfg, dict) else {}
-                    dev_port = dev_cfg.get("port") if isinstance(dev_cfg, dict) else None
+                    dev_port = (
+                        dev_cfg.get("port") if isinstance(dev_cfg, dict) else None
+                    )
                     if isinstance(dev_port, int):
                         vite_port = str(dev_port)
 

@@ -106,12 +106,8 @@ def build():
     if os.path.exists(onefile_build_dir):
         shutil.rmtree(onefile_build_dir, ignore_errors=True)
 
-    click.secho(
-        f"{ICON_INFO} Using prebuilt Lake Engine runtime...", fg="cyan"
-    )
-    click.secho(
-        f"{ICON_INFO} Copying Lake Engine runtime into Engine/...", fg="cyan"
-    )
+    click.secho(f"{ICON_INFO} Using prebuilt Lake Engine runtime...", fg="cyan")
+    click.secho(f"{ICON_INFO} Copying Lake Engine runtime into Engine/...", fg="cyan")
 
     if sys.platform == "win32":
         webview_candidates = [
@@ -211,10 +207,19 @@ def build():
     if os.path.exists(WEBVIEW_DLL):
         cmd.append(f"--include-data-files={WEBVIEW_DLL}=taupy/utils/WebView2Loader.dll")
 
-    window_dll = os.path.join(WINDOW_MODULE_DIR, "LakeEngine.dll" if sys.platform == "win32" else "libLakeEngine.dylib" if sys.platform == "darwin" else "libLakeEngine.so")
+    window_dll = os.path.join(
+        WINDOW_MODULE_DIR,
+        "LakeEngine.dll"
+        if sys.platform == "win32"
+        else "libLakeEngine.dylib"
+        if sys.platform == "darwin"
+        else "libLakeEngine.so",
+    )
     if os.path.exists(window_dll):
         runtime_name = os.path.basename(window_dll)
-        cmd.append(f"--include-data-files={window_dll}=taupy/modules/window/target/release/{runtime_name}")
+        cmd.append(
+            f"--include-data-files={window_dll}=taupy/modules/window/target/release/{runtime_name}"
+        )
     if extra_modules:
         click.secho(
             f"{ICON_INFO} Including extra modules: {', '.join(extra_modules)}",

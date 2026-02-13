@@ -230,7 +230,10 @@ def new(name, frontend):
     click.secho("  taupy run", fg="yellow")
     if frontend == "python":
         click.echo()
-        click.secho("  UI is built with Python components (VStack, Text, Button, etc.)", fg="cyan")
+        click.secho(
+            "  UI is built with Python components (VStack, Text, Button, etc.)",
+            fg="cyan",
+        )
         click.secho("  No npm or frontend build needed!", fg="cyan")
 
     click.echo()
