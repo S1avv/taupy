@@ -2,6 +2,7 @@ use wry::{
     application::{
         event::{Event, StartCause, WindowEvent},
         event_loop::{ControlFlow, EventLoopBuilder, EventLoopProxy},
+        platform::windows::EventLoopBuilderExtWindows,
         window::WindowBuilder,
     },
     webview::WebViewBuilder,
@@ -30,7 +31,7 @@ impl Logger {
 
         let path = std::env::current_dir()
             .unwrap_or_else(|_| std::path::PathBuf::from("."))
-            .join("taupy_window.log");
+            .join("LakeEngine.log");
 
         let file = OpenOptions::new()
             .create(true)
@@ -50,7 +51,9 @@ impl Logger {
 }
 
 pub fn open_window(cfg: &AppConfig) -> wry::Result<()> {
-    let event_loop = EventLoopBuilder::<UserEvent>::with_user_event().build();
+    let event_loop = EventLoopBuilder::<UserEvent>::with_user_event()
+        .with_any_thread(true)
+        .build();
     let proxy: EventLoopProxy<UserEvent> = event_loop.create_proxy();
     let mut logger = Logger::new();
 

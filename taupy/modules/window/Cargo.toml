@@ -4,6 +4,10 @@ version = "0.1.0"
 edition = "2021"
 build = "build.rs"
 
+[lib]
+name = "LakeEngine"
+crate-type = ["cdylib"]
+
 [dependencies]
 wry = { version = "0.33.0", features = ["devtools"] }
 tiny_http = "0.12"

@@ -3,6 +3,7 @@ import subprocess
 import os
 import time
 import shutil
+import sys
 from taupy.reloader import free_port
 
 
@@ -47,7 +48,13 @@ def dev():
                 env["TAUPY_HTTP_PORT"] = dev_port
                 time.sleep(2)
 
-        subprocess.run(["python", "main.py", "--dev"], env=env)
+        if os.name == "nt":
+            python_exe = shutil.which("py") or sys.executable or "python"
+        else:
+            python_exe = sys.executable or shutil.which("python3") or "python"
+
+        cmd = [python_exe, "main.py", "--dev"]
+        subprocess.run(cmd, env=env)
     finally:
         if npm_proc and npm_proc.poll() is None:
             npm_proc.terminate()
